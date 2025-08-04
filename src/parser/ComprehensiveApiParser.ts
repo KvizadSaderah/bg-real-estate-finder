@@ -1,17 +1,21 @@
 import axios from 'axios';
 import { SiteConfig } from '../types';
 import { ComprehensivePropertyListing, ComprehensiveParseResult, PropertyImage, PropertyVideo } from '../types/comprehensive';
+import { PropertyService } from '../database/PropertyService';
+import { db } from '../database/connection';
 
 export class ComprehensiveApiParser {
   private config: SiteConfig;
   private baseApiUrl: string;
+  private propertyService: PropertyService;
 
   constructor(config: SiteConfig) {
     this.config = config;
     this.baseApiUrl = config.baseUrl;
+    this.propertyService = new PropertyService();
   }
 
-  async parseAllListings(searchUrl: string, maxPages: number = 50): Promise<ComprehensiveParseResult> {
+  async parseAllListings(searchUrl: string, maxPages: number = 50, saveToDatabase: boolean = true): Promise<ComprehensiveParseResult> {
     const startTime = Date.now();
     const listings: ComprehensivePropertyListing[] = [];
     const errors: string[] = [];
@@ -20,10 +24,22 @@ export class ComprehensiveApiParser {
     let totalPages = 1;
     let totalListings = 0;
     let apiCallsUsed = 0;
+    let sessionId: string | null = null;
 
     try {
       console.log(`🚀 COMPREHENSIVE API PARSING STARTED`);
       console.log(`🎯 Target: ALL listings with MAXIMUM data extraction`);
+      
+      // Initialize database connection if saving to DB
+      if (saveToDatabase) {
+        await db.connect();
+        sessionId = await this.propertyService.createScrapingSession({
+          session_type: 'comprehensive_scan',
+          search_url: searchUrl,
+          filters: { maxPages }
+        });
+        console.log(`📊 Created scraping session: ${sessionId}`);
+      }
       
       const apiUrl = this.buildApiUrl(searchUrl);
       console.log(`🔗 API URL: ${apiUrl}`);
@@ -47,6 +63,11 @@ export class ComprehensiveApiParser {
           listings.push(...firstPageListings);
           pagesProcessed = 1;
           
+          // Save first page to database if enabled
+          if (saveToDatabase && firstPageListings.length > 0) {
+            await this.saveListingsToDatabase(firstPageListings);
+          }
+          
           console.log(`✅ Page 1: ${firstPageListings.length} listings with FULL data`);
           
           // Process remaining pages up to maxPages
@@ -63,6 +84,11 @@ export class ComprehensiveApiParser {
                 const pageListings = await this.processOffersComprehensively(response.data.offers);
                 listings.push(...pageListings);
                 pagesProcessed++;
+                
+                // Save page to database if enabled
+                if (saveToDatabase && pageListings.length > 0) {
+                  await this.saveListingsToDatabase(pageListings);
+                }
                 
                 console.log(`✅ Page ${page}: ${pageListings.length} listings processed`);
                 
@@ -86,6 +112,25 @@ export class ComprehensiveApiParser {
 
       const timeElapsed = Date.now() - startTime;
       const dataQualityScore = this.calculateDataQualityScore(listings);
+      
+      // Complete scraping session if using database
+      if (saveToDatabase && sessionId) {
+        await this.propertyService.completeScrapingSession(sessionId, {
+          total_pages: totalPages,
+          pages_processed: pagesProcessed,
+          properties_found: totalListings,
+          properties_new: listings.length, // TODO: track actual new vs updated
+          api_calls_used: apiCallsUsed,
+          errors_count: errors.length,
+          warnings_count: warnings.length,
+          time_elapsed_ms: timeElapsed,
+          average_per_page_ms: Math.round(timeElapsed / Math.max(pagesProcessed, 1)),
+          data_quality_score: parseFloat((dataQualityScore / 100).toFixed(2)),
+          errors: errors,
+          warnings: warnings
+        });
+        console.log(`📊 Scraping session completed: ${sessionId}`);
+      }
       
       console.log(`🎉 COMPREHENSIVE EXTRACTION COMPLETED!`);
       console.log(`📊 Final Stats: ${listings.length} listings with ${dataQualityScore.toFixed(1)}% data completeness`);
@@ -396,6 +441,34 @@ export class ComprehensiveApiParser {
     if (value === null || value === undefined || value === '') return undefined;
     const num = Number(value);
     return isNaN(num) ? undefined : num;
+  }
+
+  private async saveListingsToDatabase(listings: ComprehensivePropertyListing[]): Promise<void> {
+    console.log(`💾 Saving ${listings.length} listings to database...`);
+    
+    let saved = 0;
+    let updated = 0;
+    let errors = 0;
+    
+    for (const listing of listings) {
+      try {
+        const existingProperty = await this.propertyService.getPropertyByExternalId(listing.externalId, listing.sourceId);
+        
+        if (existingProperty) {
+          await this.propertyService.saveProperty(listing);
+          updated++;
+        } else {
+          await this.propertyService.saveProperty(listing);
+          saved++;
+        }
+        
+      } catch (error) {
+        console.error(`Failed to save property ${listing.externalId}:`, error);
+        errors++;
+      }
+    }
+    
+    console.log(`💾 Database save complete: ${saved} new, ${updated} updated, ${errors} errors`);
   }
 
   private calculateDataQualityScore(listings: ComprehensivePropertyListing[]): number {

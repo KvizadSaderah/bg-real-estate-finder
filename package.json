@@ -13,6 +13,13 @@
     "sofia": "ts-node src/cli-rentals.ts quick-sofia",
     "super": "ts-node src/cli-super.ts super-rent",
     "mega-sofia": "ts-node src/cli-super.ts mega-sofia",
+    "db": "ts-node src/cli-database.ts",
+    "scheduler": "ts-node src/cli-database.ts scheduler:start",
+    "db:init": "ts-node src/cli-database.ts db:init",
+    "db:status": "ts-node src/cli-database.ts db:status",
+    "scan:db": "ts-node src/cli-database.ts scan --pages 5",
+    "stats": "ts-node src/cli-database.ts stats",
+    "setup": "./scripts/setup-database.sh",
     "test": "echo \"Tests coming soon\""
   },
   "keywords": [
@@ -25,12 +32,18 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.15.5",
+    "@types/uuid": "^10.0.0",
     "axios": "^1.11.0",
     "chalk": "^4.1.2",
     "cheerio": "^1.0.0-rc.12",
     "commander": "^11.0.0",
     "lodash": "^4.17.21",
-    "playwright": "^1.40.0"
+    "node-cron": "^4.2.1",
+    "pg": "^8.16.3",
+    "playwright": "^1.40.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.0",
