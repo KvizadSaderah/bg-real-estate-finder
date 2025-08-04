@@ -49,13 +49,19 @@ export class ComprehensiveApiParser {
       apiCallsUsed++;
       
       if (firstResponse.success && firstResponse.data) {
-        const { offers, total, per_page, current_page, last_page } = firstResponse.data;
+        const responseData = firstResponse.data;
         
-        totalListings = total || offers?.length || 0;
-        totalPages = last_page || Math.ceil(totalListings / (per_page || 10)) || 1;
+        // Extract data from API response
+        const offers = responseData.offers || responseData.data || [];
+        const totalListings = responseData.count || responseData.total || 0;
+        const perPage = offers.length || 20; // Estimate based on actual results
         
-        console.log(`📊 DISCOVERY: ${totalListings} total listings across ${totalPages} pages`);
-        console.log(`📄 Per page: ${per_page || 'unknown'}, Current: ${current_page || 1}`);
+        // Calculate total pages - continue until no more results
+        const estimatedTotalPages = totalListings > 0 ? Math.ceil(totalListings / perPage) : 1;
+        totalPages = Math.min(estimatedTotalPages, maxPages);
+        
+        console.log(`📊 DISCOVERY: ${totalListings || 'unknown'} total listings (estimated ${totalPages} pages)`);
+        console.log(`📄 Per page: ~${perPage}, Processing up to ${Math.min(totalPages, maxPages)} pages`);
         
         if (offers && offers.length > 0) {
           // Process first page with MAXIMUM data extraction
@@ -70,43 +76,66 @@ export class ComprehensiveApiParser {
           
           console.log(`✅ Page 1: ${firstPageListings.length} listings with FULL data`);
           
-          // Process remaining pages up to maxPages
-          const pagesToProcess = Math.min(totalPages, maxPages);
+          // Process remaining pages - continue until no more results
+          let page = 2;
+          let consecutiveEmptyPages = 0;
+          const maxConsecutiveEmpty = 3; // Stop after 3 consecutive empty pages
           
-          for (let page = 2; page <= pagesToProcess; page++) {
+          while (page <= maxPages && consecutiveEmptyPages < maxConsecutiveEmpty) {
             try {
-              console.log(`📄 Processing page ${page}/${pagesToProcess}...`);
+              console.log(`📄 Processing page ${page}... (${listings.length} collected so far)`);
               
               const response = await this.fetchPage(apiUrl, page);
               apiCallsUsed++;
               
-              if (response.success && response.data?.offers) {
-                const pageListings = await this.processOffersComprehensively(response.data.offers);
-                listings.push(...pageListings);
-                pagesProcessed++;
+              if (response.success && response.data) {
+                const pageOffers = response.data.offers || response.data.data || [];
                 
-                // Save page to database if enabled
-                if (saveToDatabase && pageListings.length > 0) {
-                  await this.saveListingsToDatabase(pageListings);
+                if (pageOffers.length > 0) {
+                  const pageListings = await this.processOffersComprehensively(pageOffers);
+                  listings.push(...pageListings);
+                  pagesProcessed++;
+                  consecutiveEmptyPages = 0; // Reset counter
+                  
+                  // Save page to database if enabled
+                  if (saveToDatabase && pageListings.length > 0) {
+                    await this.saveListingsToDatabase(pageListings);
+                  }
+                  
+                  console.log(`✅ Page ${page}: ${pageListings.length} listings processed`);
+                  
+                  // Show progress
+                  const estimatedTotal = totalListings || listings.length * 2; // Rough estimate
+                  const progress = Math.min(100, (listings.length / estimatedTotal * 100)).toFixed(1);
+                  console.log(`📈 Progress: ~${progress}% (${listings.length} total listings collected)`);
+                } else {
+                  consecutiveEmptyPages++;
+                  console.log(`⚠️  Page ${page} returned no offers (${consecutiveEmptyPages}/${maxConsecutiveEmpty} empty)`);
+                  
+                  if (consecutiveEmptyPages >= maxConsecutiveEmpty) {
+                    console.log(`🏁 Stopping: ${maxConsecutiveEmpty} consecutive empty pages reached`);
+                    break;
+                  }
                 }
-                
-                console.log(`✅ Page ${page}: ${pageListings.length} listings processed`);
-                
-                // Show progress
-                const progress = ((page / pagesToProcess) * 100).toFixed(1);
-                console.log(`📈 Progress: ${progress}% (${listings.length}/${totalListings} listings)`);
               } else {
-                warnings.push(`Page ${page} returned no data`);
+                consecutiveEmptyPages++;
+                warnings.push(`Page ${page} request failed`);
+                console.log(`❌ Page ${page} failed, continuing...`);
               }
               
               // Rate limiting to be respectful
               await new Promise(resolve => setTimeout(resolve, 1200));
+              page++;
               
             } catch (error) {
               errors.push(`Error fetching page ${page}: ${error}`);
               console.error(`❌ Page ${page} failed:`, error);
+              consecutiveEmptyPages++;
+              page++;
             }
           }
+          
+          console.log(`🎯 PAGINATION COMPLETE: Processed ${pagesProcessed} pages, collected ${listings.length} total listings`);
         }
       }
 
