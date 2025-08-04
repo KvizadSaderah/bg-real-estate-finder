@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Finder - UES.bg Properties</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --accent-color: #f59e0b;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --background-light: #f8fafc;
+            --background-white: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: var(--background-light);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .navbar {
+            background: var(--background-white);
+            box-shadow: var(--shadow-sm);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            color: var(--primary-color) !important;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .navbar-text {
+            color: var(--text-secondary) !important;
+        }
+        
+        /* Enhanced Property Cards */
+        .property-card {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            overflow: hidden;
+            background: var(--background-white);
+            cursor: pointer;
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .property-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary-color);
+        }
+        
+        .property-card.favorited {
+            border-color: var(--accent-color);
+        }
+        
+        .property-card .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Quick Preview on Hover */
+        .property-card:hover .quick-preview {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .quick-preview {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--background-white);
+            border: 1px solid var(--primary-color);
+            border-top: none;
+            border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            z-index: 10;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .quick-preview h6 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .quick-preview p {
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .quick-preview .btn {
+            font-size: 0.8rem;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        .property-image {
+            height: 220px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .property-image::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%23e2e8f0" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)" /></svg>') center/cover;
+            opacity: 0.3;
+        }
+        
+        .price-badge {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            border-radius: var(--border-radius);
+            padding: 8px 12px;
+            display: inline-block;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .price-per-sqm {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+        
+        .top-offer-badge {
+            background: var(--accent-color);
+            color: white;
+            font-weight: 600;
+            border-radius: var(--border-radius);
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .vip-offer-badge {
+            background: var(--danger-color);
+            color: white;
+            font-weight: 600;
+            border-radius: var(--border-radius);
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Enhanced Filter Sidebar */
+        .filters-card {
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            background: var(--background-white);
+            position: sticky;
+            top: 20px;
+        }
+        
+        .filters-card .card-header {
+            background: var(--background-white);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.25rem;
+            border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+        }
+        
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .filter-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .quick-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .quick-filter-btn {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--background-white);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .quick-filter-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .quick-filter-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        /* Enhanced Stats Cards */
+        .stats-card {
+            background: var(--background-white);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+        
+        .stats-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+        
+        .stats-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            background: var(--background-white);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Property Meta Information */
+        .property-meta {
+            display: flex;
+            gap: 0.75rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .property-meta-item {
+            background: var(--background-light);
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+        
+        .property-meta-item i {
+            color: var(--text-muted);
+        }
+        
+        .property-location {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+        
+        .property-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+        
+        /* Action Buttons */
+        .favorite-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+        
+        .favorite-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+        }
+        
+        .favorite-btn.favorited {
+            background: var(--accent-color);
+            color: white;
+        }
+        
+        /* Enhanced Form Controls */
+        .form-control, .form-select {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            transition: var(--transition);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Price Range Slider */
+        .price-range-container {
+            margin: 1rem 0;
+        }
+        
+        .price-range-values {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Enhanced Buttons */
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-outline-secondary {
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+        
+        .btn-outline-secondary:hover {
+            background: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: white;
+        }
+        
+        /* View Toggle Buttons */
+        .view-toggle {
+            display: flex;
+            background: var(--background-white);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        .view-toggle button {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .view-toggle button.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        /* Sort Controls */
+        .sort-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--background-white);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+        }
+        
+        .results-count {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        /* No Properties State */
+        .no-properties {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--background-white);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+        }
+        
+        .no-properties i {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        
+        .no-properties h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .no-properties p {
+            color: var(--text-secondary);
+        }
+        
+        /* Enhanced Pagination */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
+        .pagination .page-link {
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.75rem 1rem;
+            margin: 0 2px;
+            border-radius: var(--border-radius);
+        }
+        
+        .pagination .page-item.active .page-link {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .pagination .page-link:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        /* Map Container */
+        #mapContainer {
+            height: 600px;
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            background: var(--background-white);
+        }
+        
+        /* Grid Layout Improvements */
+        .properties-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        @media (min-width: 576px) {
+            .properties-grid {
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .properties-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .properties-grid {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .properties-grid {
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            }
+        }
+        
+        /* Compact Grid View */
+        .properties-grid.compact {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        
+        .properties-grid.compact .property-card {
+            font-size: 0.9rem;
+        }
+        
+        .properties-grid.compact .property-image {
+            height: 180px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .properties-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .property-card {
+                margin-bottom: 0;
+            }
+            
+            .filters-card {
+                position: static;
+                margin-bottom: 1.5rem;
+            }
+            
+            .stats-card .card-body {
+                padding: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .sort-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            
+            .view-toggle {
+                width: 100%;
+            }
+            
+            .quick-filters {
+                justify-content: center;
+            }
+            
+            .property-image {
+                height: 200px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .properties-grid {
+                gap: 0.75rem;
+            }
+            
+            .property-card {
+                border-radius: var(--border-radius);
+            }
+            
+            .property-image {
+                height: 180px;
+            }
+        }
+        
+        /* Dark mode support (future enhancement) */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-light: #0f172a;
+                --background-white: #1e293b;
+                --text-primary: #f1f5f9;
+                --text-secondary: #94a3b8;
+                --text-muted: #64748b;
+                --border-color: #334155;
+            }
+        }
+        
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Pulse animation for loading */
+        .pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        /* Smooth hover transitions */
+        .btn, .property-card, .filters-card, .stats-card {
+            will-change: transform;
+        }
+        
+        /* Loading skeleton effect */
+        .skeleton-loader {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-home me-2"></i>Real Estate Finder
+            </a>
+            <div class="navbar-nav ms-auto d-flex align-items-center">
+                <button class="btn btn-outline-primary me-3" id="favoritesBtn" onclick="toggleFavoritesView()">
+                    <i class="fas fa-heart me-1"></i>
+                    <span id="favoritesCount">0</span> Favorites
+                </button>
+                <span class="navbar-text" id="statsText">Loading...</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Statistics Row -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value" id="totalProperties">-</div>
+                        <div class="stat-label">Total Properties</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value" id="avgPrice">-</div>
+                        <div class="stat-label">Average Price</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value" id="recentProperties">-</div>
+                        <div class="stat-label">Added Today</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value" id="topOffers">-</div>
+                        <div class="stat-label">Top Offers</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Filters Sidebar -->
+            <div class="col-lg-3">
+                <div class="card filters-card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Quick Filters -->
+                        <div class="filter-section">
+                            <label class="form-label">Quick Filters</label>
+                            <div class="quick-filters">
+                                <button class="quick-filter-btn" data-filter="top-offers" onclick="toggleQuickFilter(this, 'isTopOffer', true)">
+                                    <i class="fas fa-star me-1"></i>TOP
+                                </button>
+                                <button class="quick-filter-btn" data-filter="vip-offers" onclick="toggleQuickFilter(this, 'isVipOffer', true)">
+                                    <i class="fas fa-crown me-1"></i>VIP
+                                </button>
+                                <button class="quick-filter-btn" data-filter="recent" onclick="toggleQuickFilter(this, 'recent', true)">
+                                    <i class="fas fa-clock me-1"></i>Recent
+                                </button>
+                                <button class="quick-filter-btn" data-filter="with-images" onclick="toggleQuickFilter(this, 'hasImages', true)">
+                                    <i class="fas fa-image me-1"></i>Images
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- City Filter with Autocomplete -->
+                        <div class="filter-section">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" id="cityFilter" placeholder="Search cities..." list="citiesList">
+                            <datalist id="citiesList"></datalist>
+                        </div>
+                        
+                        <!-- Price Range Slider -->
+                        <div class="filter-section">
+                            <label class="form-label">Price Range (EUR)</label>
+                            <div class="price-range-container">
+                                <div id="priceRange"></div>
+                                <div class="price-range-values">
+                                    <span id="minPriceValue">500</span>
+                                    <span id="maxPriceValue">5000</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Area Range -->
+                        <div class="filter-section">
+                            <label class="form-label">Area Range (m²)</label>
+                            <div class="row">
+                                <div class="col">
+                                    <input type="number" class="form-control" id="minArea" placeholder="Min">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" id="maxArea" placeholder="Max">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Rooms Filter -->
+                        <div class="filter-section">
+                            <label class="form-label">Rooms</label>
+                            <div class="quick-filters">
+                                <button class="quick-filter-btn" data-rooms="1" onclick="toggleRoomFilter(this, 1)">1</button>
+                                <button class="quick-filter-btn" data-rooms="2" onclick="toggleRoomFilter(this, 2)">2</button>
+                                <button class="quick-filter-btn" data-rooms="3" onclick="toggleRoomFilter(this, 3)">3</button>
+                                <button class="quick-filter-btn" data-rooms="4" onclick="toggleRoomFilter(this, 4)">4+</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Property Type -->
+                        <div class="filter-section">
+                            <label class="form-label">Property Type</label>
+                            <select class="form-select" id="propertyTypeFilter">
+                                <option value="">All Types</option>
+                                <option value="Апартамент">Apartment</option>
+                                <option value="Къща">House</option>
+                                <option value="Студио">Studio</option>
+                                <option value="Мезонет">Maisonette</option>
+                                <option value="Етаж">Floor</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Floor Range -->
+                        <div class="filter-section">
+                            <label class="form-label">Floor Range</label>
+                            <div class="row">
+                                <div class="col">
+                                    <input type="number" class="form-control" id="minFloor" placeholder="Min">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" id="maxFloor" placeholder="Max">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="applyFilters()">
+                                <i class="fas fa-search me-2"></i>Apply Filters
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                <i class="fas fa-times me-2"></i>Clear All
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="saveSearch()">
+                                <i class="fas fa-bookmark me-2"></i>Save Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recently Viewed -->
+                <div class="card filters-card mt-3" id="recentlyViewedCard" style="display: none;">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recently Viewed</h6>
+                    </div>
+                    <div class="card-body" id="recentlyViewedList">
+                        <!-- Recently viewed properties will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Properties Content -->
+            <div class="col-lg-9">
+                <!-- Sort and View Controls -->
+                <div class="sort-controls" id="sortControls" style="display: none;">
+                    <div class="results-count" id="resultsCount">Loading...</div>
+                    <div class="ms-auto d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0">Sort by:</label>
+                            <select class="form-select" id="sortSelect" onchange="applySorting()" style="width: auto;">
+                                <option value="date-desc">Newest First</option>
+                                <option value="date-asc">Oldest First</option>
+                                <option value="price-asc">Price: Low to High</option>
+                                <option value="price-desc">Price: High to Low</option>
+                                <option value="area-desc">Area: Large to Small</option>
+                                <option value="area-asc">Area: Small to Large</option>
+                                <option value="price-per-sqm-asc">Price/m²: Low to High</option>
+                            </select>
+                        </div>
+                        <div class="view-toggle">
+                            <button class="active" id="gridViewBtn" onclick="setView('grid')" title="Grid View">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button id="compactViewBtn" onclick="setView('compact')" title="Compact Grid">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button id="listViewBtn" onclick="setView('list')" title="List View">
+                                <i class="fas fa-list"></i>
+                            </button>
+                            <button id="mapViewBtn" onclick="setView('map')" title="Map View">
+                                <i class="fas fa-map"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="loading" class="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading properties...</p>
+                </div>
+                
+                <!-- Properties Grid View -->
+                <div id="propertiesContainer" class="row" style="display: none;"></div>
+                
+                <!-- Properties List View -->
+                <div id="propertiesListContainer" class="" style="display: none;"></div>
+                
+                <!-- Map View -->
+                <div id="mapView" style="display: none;">
+                    <div id="mapContainer"></div>
+                </div>
+                
+                <!-- No Properties State -->
+                <div id="noProperties" class="no-properties" style="display: none;">
+                    <i class="fas fa-search fa-3x mb-3"></i>
+                    <h4>No properties found</h4>
+                    <p>Try adjusting your search filters or check back later for new listings</p>
+                    <button class="btn btn-primary mt-2" onclick="clearFilters()">
+                        <i class="fas fa-refresh me-2"></i>Clear Filters
+                    </button>
+                </div>
+                
+                <!-- Favorites View -->
+                <div id="favoritesView" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4><i class="fas fa-heart me-2"></i>Your Favorites</h4>
+                        <button class="btn btn-outline-secondary" onclick="toggleFavoritesView()">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Search
+                        </button>
+                    </div>
+                    <div id="favoritesContainer" class="row"></div>
+                </div>
+                
+                <!-- Pagination -->
+                <div id="paginationContainer" class="pagination-container" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Property Modal -->
+    <div class="modal fade" id="propertyModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <div>
+                        <h4 class="modal-title mb-0" id="modalTitle">Property Details</h4>
+                        <small class="text-muted" id="modalSubtitle"></small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-primary btn-sm" id="modalFavoriteBtn" onclick="toggleFavoriteModal()">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" id="modalCompareBtn" onclick="addToComparison()">
+                            <i class="fas fa-balance-scale"></i>
+                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-0" id="modalBody">
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading property details...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Property Comparison Modal -->
+    <div class="modal fade" id="comparisonModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Property Comparison</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="comparisonBody">
+                    <!-- Comparison content will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

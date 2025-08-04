@@ -18,8 +18,12 @@
     "db:init": "ts-node src/cli-database.ts db:init",
     "db:status": "ts-node src/cli-database.ts db:status",
     "scan:db": "ts-node src/cli-database.ts scan --pages 5",
+    "scan:full": "ts-node src/cli-database.ts scan --pages 999",
+    "scan:all": "ts-node src/cli-full-scan.ts all",
+    "scan:quick": "ts-node src/cli-full-scan.ts quick",
     "stats": "ts-node src/cli-database.ts stats",
     "setup": "./scripts/setup-database.sh",
+    "web": "ts-node src/web/server.ts",
     "test": "echo \"Tests coming soon\""
   },
   "keywords": [
@@ -32,6 +36,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.23",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.15.5",
     "@types/uuid": "^10.0.0",
@@ -39,6 +45,9 @@
     "chalk": "^4.1.2",
     "cheerio": "^1.0.0-rc.12",
     "commander": "^11.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^4.21.2",
     "lodash": "^4.17.21",
     "node-cron": "^4.2.1",
     "pg": "^8.16.3",
