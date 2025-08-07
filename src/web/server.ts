@@ -170,25 +170,50 @@ app.get('/api/properties', async (req, res) => {
 app.get('/api/properties/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
 
-    const query = `
-      SELECT 
-        p.*,
-        pp.*,
-        pd.*,
-        pl.*,
-        ps.*,
-        pa.*
-      FROM properties p
-      LEFT JOIN property_pricing pp ON p.id = pp.property_id
-      LEFT JOIN property_details pd ON p.id = pd.property_id
-      LEFT JOIN property_locations pl ON p.id = pl.property_id
-      LEFT JOIN property_status ps ON p.id = ps.property_id
-      LEFT JOIN property_agencies pa ON p.id = pa.property_id
-      WHERE p.id = $1 OR p.external_id = $1
-    `;
+    let query;
+    let queryParams;
 
-    const result = await db.query(query, [id]);
+    if (isUuid) {
+      query = `
+        SELECT 
+          p.*,
+          pp.*,
+          pd.*,
+          pl.*,
+          ps.*,
+          pa.*
+        FROM properties p
+        LEFT JOIN property_pricing pp ON p.id = pp.property_id
+        LEFT JOIN property_details pd ON p.id = pd.property_id
+        LEFT JOIN property_locations pl ON p.id = pl.property_id
+        LEFT JOIN property_status ps ON p.id = ps.property_id
+        LEFT JOIN property_agencies pa ON p.id = pa.property_id
+        WHERE p.id = $1::uuid
+      `;
+      queryParams = [id];
+    } else {
+      query = `
+        SELECT 
+          p.*,
+          pp.*,
+          pd.*,
+          pl.*,
+          ps.*,
+          pa.*
+        FROM properties p
+        LEFT JOIN property_pricing pp ON p.id = pp.property_id
+        LEFT JOIN property_details pd ON p.id = pd.property_id
+        LEFT JOIN property_locations pl ON p.id = pl.property_id
+        LEFT JOIN property_status ps ON p.id = ps.property_id
+        LEFT JOIN property_agencies pa ON p.id = pa.property_id
+        WHERE p.external_id = $1
+      `;
+      queryParams = [id];
+    }
+
+    const result = await db.query(query, queryParams);
 
     if (result.rows.length === 0) {
       return res.status(404).json({

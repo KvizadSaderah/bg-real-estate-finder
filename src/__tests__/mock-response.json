@@ -1,0 +1,19 @@
+
+{
+  "success": true,
+  "data": {
+    "offers": [
+      {
+        "id": 123,
+        "title": "Test Property",
+        "price": "1000 EUR",
+        "url": "https://example.com/property/123",
+        "city": "Sofia",
+        "size": 100,
+        "rooms": 3
+      }
+    ],
+    "total": 1,
+    "perPage": 10
+  }
+}
