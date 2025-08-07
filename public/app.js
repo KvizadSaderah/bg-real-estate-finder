@@ -383,8 +383,8 @@ PropertyApp.prototype.createPropertyCard = function(property) {
     card.onclick = () => this.showPropertyDetails(property.external_id);
     
     card.innerHTML = `
-        <div class="property-image">
-            <i class="fas fa-home"></i>
+        <div class="property-image" style="background-image: url(${property.thumbnail_url || ''})">
+            ${!property.thumbnail_url ? '<i class="fas fa-home"></i>' : ''}
             <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" onclick="event.stopPropagation(); app.toggleFavorite('${property.external_id}')" aria-label="Add to favorites">
                 <i class="fas fa-heart"></i>
             </button>
