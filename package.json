@@ -30,7 +30,11 @@
     "monitor:run": "ts-node src/cli-monitor.ts start",
     "monitor:config": "ts-node src/cli-monitor.ts config",
     "monitor:status": "ts-node src/cli-monitor.ts status",
-    "monitor:test": "ts-node src/cli-monitor.ts test-notifications"
+    "monitor:test": "ts-node src/cli-monitor.ts test-notifications",
+    "crawler": "ts-node src/cli-parser-crawler.ts",
+    "crawler:run": "ts-node src/cli-parser-crawler.ts run",
+    "crawler:test": "ts-node src/cli-parser-crawler.ts test",
+    "crawler:list": "ts-node src/cli-parser-crawler.ts list"
   },
   "keywords": [
     "real-estate",

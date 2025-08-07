@@ -757,34 +757,17 @@ app.post('/api/admin/crawler/:action', async (req, res) => {
     const { action } = req.params;
     
     if (action === 'start') {
-      // In a real implementation, you'd start the monitoring service
-      // For now, we'll simulate by creating a session entry
+      // Import and run the parser crawler
+      const { parserCrawler } = await import('../crawlers/ParserCrawler');
       
-      const sessionQuery = `
-        INSERT INTO scraping_sessions (
-          session_type,
-          started_at,
-          status,
-          metadata
-        ) VALUES (
-          'manual_trigger',
-          NOW(),
-          'running',
-          $1
-        ) RETURNING id
-      `;
-      
-      const metadata = {
-        triggered_by: 'web_admin',
-        trigger_time: new Date().toISOString()
-      };
-      
-      const result = await db.query(sessionQuery, [JSON.stringify(metadata)]);
+      // Run all enabled sites in background
+      parserCrawler.runAllEnabledSites().catch(error => {
+        console.error('Background crawler error:', error);
+      });
       
       res.json({
         success: true,
-        message: 'Crawler started manually',
-        sessionId: result.rows[0].id
+        message: 'Crawler started for all enabled sites'
       });
       
     } else if (action === 'stop') {
@@ -797,7 +780,7 @@ app.post('/api/admin/crawler/:action', async (req, res) => {
       
       res.json({
         success: true,
-        message: 'Crawler stopped'
+        message: 'Running crawler sessions stopped'
       });
       
     } else {
@@ -828,48 +811,55 @@ app.post('/api/admin/test', async (req, res) => {
       });
     }
     
-    // Create a test session entry
-    const sessionQuery = `
-      INSERT INTO scraping_sessions (
-        session_type,
-        search_url,
-        started_at,
-        status,
-        total_pages,
-        metadata
-      ) VALUES (
-        'test_run',
-        $1,
-        NOW(),
-        'completed',
-        $2,
-        $3
-      ) RETURNING id
-    `;
+    // For now, we'll use the default UES.bg parser for testing
+    // In the future, this could detect the site type from URL
+    const { parserCrawler } = await import('../crawlers/ParserCrawler');
     
-    const metadata = {
-      test_url: url,
-      test_pages: maxPages,
-      timestamp: new Date().toISOString()
-    };
-    
-    const result = await db.query(sessionQuery, [url, maxPages, JSON.stringify(metadata)]);
-    
-    // Simulate test results
-    const testResults = {
-      sessionId: result.rows[0].id,
-      url: url,
-      pagesScanned: maxPages,
-      propertiesFound: Math.floor(Math.random() * 20) + 5,
-      timeElapsed: Math.floor(Math.random() * 5000) + 1000,
-      success: Math.random() > 0.2, // 80% success rate
-      errors: Math.random() > 0.7 ? ['Sample error message'] : []
-    };
-    
-    res.json({
-      success: true,
-      data: testResults
-    });
+    try {
+      await parserCrawler.testSite('ues_bg');
+      
+      // Get the latest test session
+      const sessionQuery = `
+        SELECT * FROM scraping_sessions 
+        WHERE session_type = 'test_run' 
+        ORDER BY started_at DESC 
+        LIMIT 1
+      `;
+      
+      const sessionResult = await db.query(sessionQuery);
+      const session = sessionResult.rows[0];
+      
+      const testResults = {
+        sessionId: session.id,
+        url: url,
+        pagesScanned: session.pages_processed || 1,
+        propertiesFound: session.properties_found || 0,
+        timeElapsed: session.time_elapsed_ms || 0,
+        success: session.status === 'completed',
+        errors: session.errors ? JSON.parse(session.errors) : []
+      };
+      
+      res.json({
+        success: true,
+        data: testResults
+      });
+      
+    } catch (crawlerError) {
+      // Fallback to mock results if crawler fails
+      const testResults = {
+        url: url,
+        pagesScanned: maxPages,
+        propertiesFound: 0,
+        timeElapsed: 1000,
+        success: false,
+        errors: [crawlerError instanceof Error ? crawlerError.message : 'Crawler test failed']
+      };
+      
+      res.json({
+        success: false,
+        data: testResults
+      });
+    }
     
   } catch (error) {
     console.error('Error testing crawler:', error);
