@@ -24,7 +24,13 @@
     "stats": "ts-node src/cli-database.ts stats",
     "setup": "./scripts/setup-database.sh",
     "web": "ts-node src/web/server.ts",
-    "test": "jest"
+    "test": "jest",
+    "monitor": "ts-node src/cli-monitor.ts",
+    "monitor:start": "ts-node src/cli-monitor.ts start --daemon",
+    "monitor:run": "ts-node src/cli-monitor.ts start",
+    "monitor:config": "ts-node src/cli-monitor.ts config",
+    "monitor:status": "ts-node src/cli-monitor.ts status",
+    "monitor:test": "ts-node src/cli-monitor.ts test-notifications"
   },
   "keywords": [
     "real-estate",
@@ -50,6 +56,7 @@
     "express": "^4.21.2",
     "lodash": "^4.17.21",
     "node-cron": "^4.2.1",
+    "nodemailer": "^6.9.8",
     "pg": "^8.16.3",
     "playwright": "^1.40.0",
     "uuid": "^11.1.0"
@@ -58,6 +65,7 @@
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.14.0",
     "@types/node": "^20.0.0",
+    "@types/nodemailer": "^6.4.14",
     "jest": "^30.0.5",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.0",

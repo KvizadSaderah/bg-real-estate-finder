@@ -1484,6 +1484,401 @@ PropertyApp.prototype.navigateProperties = function(direction) {
     // TODO: Implement property navigation with arrow keys
 };
 
+// Trends functionality
+PropertyApp.prototype.loadTrends = async function() {
+    const period = document.getElementById('trendsPeriod')?.value || '30';
+    const city = document.getElementById('trendsCity')?.value || '';
+    
+    const trendsContent = document.getElementById('trendsContent');
+    if (!trendsContent) return;
+    
+    // Show loading state
+    trendsContent.innerHTML = `
+        <div class="text-center p-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading trends...</span>
+            </div>
+            <p class="mt-3">Loading market trends...</p>
+        </div>
+    `;
+    
+    try {
+        const params = new URLSearchParams({ period });
+        if (city) params.append('city', city);
+        
+        const response = await fetch(`/api/trends?${params}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            this.displayTrends(result.data);
+        } else {
+            this.showTrendsError(result.error || 'Failed to load trends data');
+        }
+        
+    } catch (error) {
+        console.error('Error loading trends:', error);
+        this.showTrendsError('Network error - please check your connection');
+    }
+};
+
+PropertyApp.prototype.displayTrends = function(data) {
+    const trendsContent = document.getElementById('trendsContent');
+    
+    const cityText = data.city === 'all' ? 'All Cities' : data.city;
+    const periodText = data.period === 7 ? 'last 7 days' :
+                      data.period === 30 ? 'last 30 days' :
+                      data.period === 90 ? 'last 3 months' :
+                      data.period === 180 ? 'last 6 months' : `last ${data.period} days`;
+    
+    trendsContent.innerHTML = `
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Showing market trends for <strong>${cityText}</strong> over the <strong>${periodText}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Changes Summary -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-info">${data.priceChanges?.total_changes || 0}</div>
+                        <div class="stat-label">Total Price Changes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-success">${data.priceChanges?.increases || 0}</div>
+                        <div class="stat-label">Price Increases</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value text-danger">${data.priceChanges?.decreases || 0}</div>
+                        <div class="stat-label">Price Decreases</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <div class="stat-value">${data.priceChanges?.avg_change_amount ? this.formatPrice(data.priceChanges.avg_change_amount) : '—'}</div>
+                        <div class="stat-label">Avg Change Amount</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Average Price Over Time</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="priceChart" style="height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Property Types</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="typeChart" style="height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Area Analysis and Top Quarters -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Price by Area Size</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="areaChart" style="height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Top Neighborhoods</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 350px; overflow-y: auto;">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Quarter</th>
+                                        <th>Properties</th>
+                                        <th>Avg Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.topQuarters?.slice(0, 15).map(quarter => `
+                                        <tr>
+                                            <td><strong>${quarter.quarter}</strong><br><small class="text-muted">${quarter.city}</small></td>
+                                            <td><span class="badge bg-primary">${quarter.properties_count}</span></td>
+                                            <td><strong>${this.formatPrice(quarter.avg_price)}</strong></td>
+                                        </tr>
+                                    `).join('') || '<tr><td colspan="3" class="text-muted text-center">No data available</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Create charts after DOM is ready
+    setTimeout(() => {
+        this.createPriceChart(data.priceOverTime);
+        this.createTypeChart(data.propertyTypes);
+        this.createAreaChart(data.areaAnalysis);
+    }, 100);
+};
+
+PropertyApp.prototype.createPriceChart = function(priceData) {
+    const canvas = document.getElementById('priceChart');
+    if (!canvas || !priceData || priceData.length === 0) return;
+
+    // Destroy existing chart if it exists
+    if (this.priceChart) {
+        this.priceChart.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+    
+    // Group data by date and calculate averages
+    const dateGroups = {};
+    priceData.forEach(item => {
+        const date = new Date(item.date).toLocaleDateString();
+        if (!dateGroups[date]) {
+            dateGroups[date] = {
+                prices: [],
+                count: 0
+            };
+        }
+        dateGroups[date].prices.push(parseFloat(item.avg_price));
+        dateGroups[date].count += parseInt(item.properties_count);
+    });
+
+    const labels = Object.keys(dateGroups).sort();
+    const avgPrices = labels.map(date => {
+        const prices = dateGroups[date].prices;
+        return prices.reduce((sum, price) => sum + price, 0) / prices.length;
+    });
+    
+    this.priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Average Price (EUR)',
+                data: avgPrices,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return '€' + Math.round(value).toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Avg Price: €' + Math.round(context.parsed.y).toLocaleString();
+                        }
+                    }
+                },
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+};
+
+PropertyApp.prototype.createTypeChart = function(typeData) {
+    const canvas = document.getElementById('typeChart');
+    if (!canvas || !typeData || typeData.length === 0) return;
+
+    // Destroy existing chart if it exists
+    if (this.typeChart) {
+        this.typeChart.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+    
+    const labels = typeData.slice(0, 6).map(item => item.property_type);
+    const counts = typeData.slice(0, 6).map(item => parseInt(item.count));
+    
+    const colors = [
+        '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
+    ];
+    
+    this.typeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: counts,
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((context.parsed / total) * 100);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+};
+
+PropertyApp.prototype.createAreaChart = function(areaData) {
+    const canvas = document.getElementById('areaChart');
+    if (!canvas || !areaData || areaData.length === 0) return;
+
+    // Destroy existing chart if it exists
+    if (this.areaChart) {
+        this.areaChart.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+    
+    const labels = areaData.map(item => item.area_range);
+    const avgPrices = areaData.map(item => parseFloat(item.avg_price));
+    
+    this.areaChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Average Price (EUR)',
+                data: avgPrices,
+                backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                borderColor: '#2563eb',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '€' + Math.round(value).toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Avg Price: €' + Math.round(context.parsed.y).toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+};
+
+PropertyApp.prototype.showTrendsError = function(message) {
+    const trendsContent = document.getElementById('trendsContent');
+    trendsContent.innerHTML = `
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-exclamation-triangle me-2"></i>Unable to Load Trends</h5>
+            <p>${message}</p>
+            <hr>
+            <button class="btn btn-primary" onclick="app.loadTrends()">
+                <i class="fas fa-refresh me-2"></i>Try Again
+            </button>
+        </div>
+    `;
+};
+
+// Trends view toggle
+function toggleTrendsView() {
+    const trendsView = document.getElementById('trendsView');
+    const mainElements = document.querySelectorAll('.col-lg-9 > *:not(#trendsView)');
+    
+    if (trendsView.style.display === 'none' || !trendsView.style.display) {
+        // Show trends view
+        trendsView.style.display = 'block';
+        mainElements.forEach(el => {
+            if (el !== trendsView) el.style.display = 'none';
+        });
+        
+        // Load trends data
+        if (app) {
+            app.loadTrends();
+        }
+    } else {
+        // Hide trends view
+        trendsView.style.display = 'none';
+        mainElements.forEach(el => {
+            if (el !== trendsView) el.style.display = '';
+        });
+    }
+}
+
+// Load trends function for global access
+function loadTrends() {
+    if (app) app.loadTrends();
+}
+
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     window.app = new PropertyApp();
