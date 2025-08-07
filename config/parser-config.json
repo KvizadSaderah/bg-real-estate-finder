@@ -1,0 +1,110 @@
+{
+  "sites": [
+    {
+      "id": "ues_bg",
+      "name": "UES.bg",
+      "baseUrl": "https://ues.bg",
+      "searchUrls": [
+        "https://ues.bg/bg/find?form_action=search&property_type=for_rent&property_kind=apartament&city_id=66"
+      ],
+      "enabled": true,
+      "maxPages": 3,
+      "selectors": {
+        "propertyLinks": "a[href*=\"/bg/for_rent/\"]",
+        "nextPageButton": "a.next-page",
+        "title": {
+          "selector": "h1.property-title, .title-main, h1",
+          "attribute": "text",
+          "required": true
+        },
+        "price": {
+          "selector": ".price-main .price, .price-value, .property-price",
+          "attribute": "text",
+          "transform": "currency",
+          "regex": "\\d+",
+          "required": true
+        },
+        "area": {
+          "selector": ".property-area, .area-value, [data-area]",
+          "attribute": "text",
+          "transform": "area",
+          "regex": "\\d+(\\.\\d+)?"
+        },
+        "rooms": {
+          "selector": ".rooms-count, .property-rooms, [data-rooms]",
+          "attribute": "text",
+          "transform": "number",
+          "regex": "\\d+"
+        },
+        "floor": {
+          "selector": ".floor-info .floor, .property-floor",
+          "attribute": "text",
+          "transform": "number",
+          "regex": "\\d+"
+        },
+        "totalFloors": {
+          "selector": ".floor-info .total-floors, .building-floors",
+          "attribute": "text",
+          "transform": "number",
+          "regex": "\\d+"
+        },
+        "city": {
+          "selector": ".location .city, .property-city, .location-city",
+          "attribute": "text",
+          "required": true
+        },
+        "quarter": {
+          "selector": ".location .quarter, .neighborhood, .property-quarter",
+          "attribute": "text"
+        },
+        "address": {
+          "selector": ".full-address, .property-address, .location-full",
+          "attribute": "text"
+        },
+        "description": {
+          "selector": ".property-description, .description-text, .property-details",
+          "attribute": "text"
+        },
+        "propertyType": {
+          "selector": ".property-type, .type-value, [data-type]",
+          "attribute": "text"
+        },
+        "images": {
+          "selector": ".property-images img, .gallery img, .photo-gallery img",
+          "attribute": "src"
+        },
+        "phone": {
+          "selector": ".contact-phone, .phone-number, [data-phone]",
+          "attribute": "text",
+          "regex": "\\+?[\\d\\s\\-\\(\\)]+"
+        },
+        "email": {
+          "selector": ".contact-email, .email-address, [data-email]",
+          "attribute": "text"
+        },
+        "agency": {
+          "selector": ".agency-name, .broker-name, .publisher-name",
+          "attribute": "text"
+        },
+        "features": {
+          "selector": ".property-features li, .amenities li, .features-list li",
+          "attribute": "text"
+        }
+      },
+      "waitTimes": {
+        "betweenPages": 2000,
+        "betweenProperties": 1000
+      },
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "headers": {
+        "Accept-Language": "bg-BG,bg;q=0.9,en;q=0.8"
+      }
+    }
+  ],
+  "globalSettings": {
+    "timeout": 30000,
+    "retries": 3,
+    "defaultWaitTime": 1000,
+    "concurrency": 2
+  }
+}

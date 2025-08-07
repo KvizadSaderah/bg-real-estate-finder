@@ -1,1003 +1,1196 @@
 <!DOCTYPE html>
-<html lang="bg">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real Estate Finder - UES.bg Properties</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>PropertyFinder Pro - Smart Real Estate Search</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2563eb;
-            --primary-dark: #1d4ed8;
-            --secondary-color: #64748b;
-            --accent-color: #f59e0b;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --background-light: #f8fafc;
-            --background-white: #ffffff;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --text-muted: #94a3b8;
-            --border-color: #e2e8f0;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            --border-radius: 8px;
-            --border-radius-lg: 12px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            --border-glass: 1px solid rgba(255, 255, 255, 0.18);
+            --backdrop-glass: rgba(255, 255, 255, 0.25);
         }
 
         * {
-            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
         }
-        
+
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+        }
+
         body {
-            background-color: var(--background-light);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: var(--text-primary);
-            line-height: 1.6;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
         }
-        
-        .navbar {
-            background: var(--background-white);
-            box-shadow: var(--shadow-sm);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1rem 0;
+
+        /* Glass morphism effects */
+        .glass {
+            background: var(--backdrop-glass);
+            box-shadow: var(--shadow-glass);
+            border: var(--border-glass);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
         }
-        
-        .navbar-brand {
-            color: var(--primary-color) !important;
-            font-weight: 700;
-            font-size: 1.5rem;
+
+        .glass-dark {
+            background: rgba(17, 25, 40, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.125);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
         }
-        
-        .navbar-text {
-            color: var(--text-secondary) !important;
+
+        /* Gradient buttons */
+        .btn-gradient-primary {
+            background: var(--gradient-primary);
+            transition: all 0.3s ease;
         }
-        
-        /* Enhanced Property Cards */
+        .btn-gradient-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-gradient-secondary {
+            background: var(--gradient-secondary);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(240, 147, 251, 0.4);
+        }
+
+        .btn-gradient-accent {
+            background: var(--gradient-accent);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(79, 172, 254, 0.4);
+        }
+
+        /* Property cards with enhanced styling */
         .property-card {
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-            transition: var(--transition);
-            overflow: hidden;
-            background: var(--background-white);
-            cursor: pointer;
-            position: relative;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .property-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-xl);
-            border-color: var(--primary-color);
-        }
-        
-        .property-card.favorited {
-            border-color: var(--accent-color);
-        }
-        
-        .property-card .card-body {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* Quick Preview on Hover */
-        .property-card:hover .quick-preview {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .quick-preview {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: var(--background-white);
-            border: 1px solid var(--primary-color);
-            border-top: none;
-            border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-            padding: 1rem;
-            opacity: 0;
-            visibility: hidden;
-            transition: var(--transition);
-            z-index: 10;
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .quick-preview h6 {
-            margin-bottom: 0.5rem;
-            color: var(--primary-color);
-        }
-        
-        .quick-preview p {
-            margin-bottom: 0.5rem;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-        
-        .quick-preview .btn {
-            font-size: 0.8rem;
-            padding: 0.375rem 0.75rem;
-        }
-        
-        .property-image {
-            height: 220px;
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-size: 3rem;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
         }
-        
-        .property-image::before {
+
+        .property-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%23e2e8f0" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)" /></svg>') center/cover;
-            opacity: 0.3;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
         }
-        
-        .price-badge {
-            background: var(--primary-color);
-            color: white;
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            padding: 8px 12px;
-            display: inline-block;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
+
+        .property-card:hover::before {
+            opacity: 1;
         }
-        
-        .price-per-sqm {
-            font-size: 0.75rem;
-            opacity: 0.9;
-            margin-top: 2px;
+
+        .property-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
         }
-        
-        .top-offer-badge {
-            background: var(--accent-color);
-            color: white;
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            padding: 4px 8px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+
+        /* Enhanced badges */
+        .badge-top {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            animation: pulse 2s infinite;
         }
-        
-        .vip-offer-badge {
-            background: var(--danger-color);
-            color: white;
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            padding: 4px 8px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+
+        .badge-vip {
+            background: linear-gradient(135deg, #feca57, #ff9ff3);
+            animation: glow 2s ease-in-out infinite alternate;
         }
-        
-        /* Enhanced Filter Sidebar */
-        .filters-card {
-            border-radius: var(--border-radius-lg);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
-            background: var(--background-white);
-            position: sticky;
-            top: 20px;
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
-        
-        .filters-card .card-header {
-            background: var(--background-white);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1.25rem;
-            border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(254, 202, 87, 0.5); }
+            to { box-shadow: 0 0 20px rgba(254, 202, 87, 0.8), 0 0 30px rgba(254, 202, 87, 0.4); }
         }
-        
-        .filter-section {
-            margin-bottom: 1.5rem;
-        }
-        
-        .filter-section:last-child {
-            margin-bottom: 0;
-        }
-        
-        .quick-filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        .quick-filter-btn {
-            padding: 0.375rem 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            background: var(--background-white);
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .quick-filter-btn:hover {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-        
-        .quick-filter-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-        
-        /* Enhanced Stats Cards */
-        .stats-card {
-            background: var(--background-white);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-            transition: var(--transition);
-        }
-        
-        .stats-card:hover {
-            box-shadow: var(--shadow-md);
-        }
-        
-        .stats-card .card-body {
-            padding: 1.5rem;
-        }
-        
-        .stat-value {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: 0.25rem;
-        }
-        
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        /* Loading States */
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            background: var(--background-white);
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-sm);
-        }
-        
+
+        /* Smart loading skeleton */
         .skeleton {
             background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
+            background-size: 400% 100%;
+            animation: shimmer 1.5s infinite;
         }
-        
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+
+        @keyframes shimmer {
+            0% { background-position: 400% 0; }
+            100% { background-position: -400% 0; }
         }
-        
-        /* Property Meta Information */
-        .property-meta {
-            display: flex;
-            gap: 0.75rem;
-            margin: 1rem 0;
-            flex-wrap: wrap;
+
+        /* Navigation with glass effect */
+        .navbar-glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
-        .property-meta-item {
-            background: var(--background-light);
-            padding: 0.375rem 0.75rem;
-            border-radius: var(--border-radius);
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
-        }
-        
-        .property-meta-item i {
-            color: var(--text-muted);
-        }
-        
-        .property-location {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
-        }
-        
-        .property-title {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0.75rem;
-            line-height: 1.4;
-        }
-        
-        /* Action Buttons */
-        .favorite-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
+
+        /* Enhanced filters sidebar */
+        .filters-glass {
             background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--transition);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Price input styling */
+        .price-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .price-input:focus {
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        /* Enhanced stats cards */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.8));
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Advanced search modal */
+        .modal-glass {
+            background: rgba(17, 25, 40, 0.8);
+            backdrop-filter: blur(20px);
+        }
+
+        .modal-content-glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Property grid masonry effect */
+        .properties-masonry {
+            columns: 1;
+            column-gap: 1.5rem;
+        }
+
+        @media (min-width: 640px) {
+            .properties-masonry { columns: 2; }
+        }
+
+        @media (min-width: 1024px) {
+            .properties-masonry { columns: 3; }
+        }
+
+        @media (min-width: 1280px) {
+            .properties-masonry { columns: 4; }
+        }
+
+        .properties-masonry .property-card {
+            break-inside: avoid;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+
+        /* Enhanced tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
             backdrop-filter: blur(10px);
         }
-        
-        .favorite-btn:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: scale(1.1);
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
         }
-        
-        .favorite-btn.favorited {
-            background: var(--accent-color);
-            color: white;
-        }
-        
-        /* Enhanced Form Controls */
-        .form-control, .form-select {
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 0.75rem;
-            font-size: 0.875rem;
-            transition: var(--transition);
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        
-        .form-label {
-            font-weight: 500;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-        }
-        
-        /* Price Range Slider */
-        .price-range-container {
-            margin: 1rem 0;
-        }
-        
-        .price-range-values {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
-        
-        /* Enhanced Buttons */
-        .btn-primary {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-            font-weight: 500;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            transition: var(--transition);
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            border-color: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-        
-        .btn-outline-secondary {
-            border-color: var(--border-color);
-            color: var(--text-secondary);
-            font-weight: 500;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            transition: var(--transition);
-        }
-        
-        .btn-outline-secondary:hover {
-            background: var(--secondary-color);
-            border-color: var(--secondary-color);
-            color: white;
-        }
-        
-        /* View Toggle Buttons */
-        .view-toggle {
-            display: flex;
-            background: var(--background-white);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            overflow: hidden;
-        }
-        
-        .view-toggle button {
-            padding: 0.5rem 1rem;
+
+        /* Floating action button */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--gradient-primary);
             border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: var(--transition);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
         }
-        
-        .view-toggle button.active {
-            background: var(--primary-color);
+
+        .fab:hover {
+            transform: scale(1.1) rotate(10deg);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        /* Enhanced animations */
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 30px, 0);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.5s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translate3d(-30px, 0, 0);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        /* Dark mode toggle */
+        .dark body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 100%);
+        }
+
+        .dark .glass {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .property-card {
+            background: rgba(255, 255, 255, 0.05);
             color: white;
         }
-        
-        /* Sort Controls */
-        .sort-controls {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: var(--background-white);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-lg);
+
+        /* Enhanced micro-interactions */
+        .btn-micro {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        .results-count {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
+
+        .btn-micro:active {
+            transform: scale(0.95);
         }
-        
-        /* No Properties State */
-        .no-properties {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: var(--background-white);
-            border-radius: var(--border-radius-lg);
-            border: 1px solid var(--border-color);
+
+        /* Advanced filters toggle */
+        .filter-toggle {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
-        
-        .no-properties i {
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-        
-        .no-properties h4 {
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-        }
-        
-        .no-properties p {
-            color: var(--text-secondary);
-        }
-        
-        /* Enhanced Pagination */
-        .pagination-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 2rem;
-        }
-        
-        .pagination .page-link {
-            border-color: var(--border-color);
-            color: var(--text-secondary);
-            padding: 0.75rem 1rem;
-            margin: 0 2px;
-            border-radius: var(--border-radius);
-        }
-        
-        .pagination .page-item.active .page-link {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .pagination .page-link:hover {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-        
-        /* Map Container */
-        #mapContainer {
-            height: 600px;
-            border-radius: var(--border-radius-lg);
-            border: 1px solid var(--border-color);
-            background: var(--background-white);
-        }
-        
-        /* Grid Layout Improvements */
-        .properties-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1rem;
-        }
-        
-        @media (min-width: 576px) {
-            .properties-grid {
-                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            }
-        }
-        
-        @media (min-width: 768px) {
-            .properties-grid {
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            }
-        }
-        
-        @media (min-width: 992px) {
-            .properties-grid {
-                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            }
-        }
-        
-        @media (min-width: 1200px) {
-            .properties-grid {
-                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            }
-        }
-        
-        /* Compact Grid View */
-        .properties-grid.compact {
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1rem;
-        }
-        
-        .properties-grid.compact .property-card {
-            font-size: 0.9rem;
-        }
-        
-        .properties-grid.compact .property-image {
-            height: 180px;
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 1rem;
-            }
-            
-            .properties-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            
-            .property-card {
-                margin-bottom: 0;
-            }
-            
-            .filters-card {
-                position: static;
-                margin-bottom: 1.5rem;
-            }
-            
-            .stats-card .card-body {
-                padding: 1rem;
-            }
-            
-            .stat-value {
-                font-size: 1.5rem;
-            }
-            
-            .sort-controls {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0.75rem;
-            }
-            
-            .view-toggle {
-                width: 100%;
-            }
-            
-            .quick-filters {
-                justify-content: center;
-            }
-            
-            .property-image {
-                height: 200px;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .properties-grid {
-                gap: 0.75rem;
-            }
-            
-            .property-card {
-                border-radius: var(--border-radius);
-            }
-            
-            .property-image {
-                height: 180px;
-            }
-        }
-        
-        /* Dark mode support (future enhancement) */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --background-light: #0f172a;
-                --background-white: #1e293b;
-                --text-primary: #f1f5f9;
-                --text-secondary: #94a3b8;
-                --text-muted: #64748b;
-                --border-color: #334155;
-            }
-        }
-        
-        /* Animation Classes */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .slide-up {
-            animation: slideUp 0.3s ease-out;
-        }
-        
-        @keyframes slideUp {
-            from { transform: translateY(10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        /* Pulse animation for loading */
-        .pulse {
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-        
-        /* Smooth hover transitions */
-        .btn, .property-card, .filters-card, .stats-card {
-            will-change: transform;
-        }
-        
-        /* Loading skeleton effect */
-        .skeleton-loader {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-        }
-        
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+
+        .filter-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
     </style>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="#">
-                <i class="fas fa-home me-2"></i>Real Estate Finder
-            </a>
-            <div class="navbar-nav ms-auto d-flex align-items-center">
-                <button class="btn btn-outline-primary me-3" id="favoritesBtn" onclick="toggleFavoritesView()">
-                    <i class="fas fa-heart me-1"></i>
-                    <span id="favoritesCount">0</span> Favorites
-                </button>
-                <span class="navbar-text" id="statsText">Loading...</span>
+
+<body class="antialiased">
+    <!-- Navigation Header -->
+    <nav class="navbar-glass sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <i class="fas fa-home text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-display text-xl font-bold text-gray-800">PropertyFinder</h1>
+                        <p class="text-xs text-gray-500">Smart Real Estate Search</p>
+                    </div>
+                </div>
+
+                <!-- Main Navigation -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <button onclick="showView('search')" class="nav-btn text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">
+                        <i class="fas fa-search mr-2"></i>Search
+                    </button>
+                    <button onclick="showView('trends')" class="nav-btn text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">
+                        <i class="fas fa-chart-line mr-2"></i>Market Trends
+                    </button>
+                    <button onclick="showView('favorites')" class="nav-btn text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200 relative">
+                        <i class="fas fa-heart mr-2"></i>Favorites
+                        <span id="favoritesCountBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                    </button>
+                    <button onclick="showView('admin')" class="nav-btn text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">
+                        <i class="fas fa-cog mr-2"></i>Crawler Admin
+                    </button>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleAdvancedSearch()" class="btn-micro p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-sliders-h"></i>
+                    </button>
+                    <button onclick="toggleDarkMode()" class="btn-micro p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-moon" id="darkModeIcon"></i>
+                    </button>
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <!-- Statistics Row -->
-        <div class="row mb-4">
-            <div class="col-md-3 mb-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <div class="stat-value" id="totalProperties">-</div>
-                        <div class="stat-label">Total Properties</div>
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Quick Stats Bar -->
+        <div class="mb-8 fade-in-up">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="stat-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Properties</p>
+                            <p class="text-2xl font-bold text-gray-800" id="totalProperties">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-home text-white"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <div class="stat-value" id="avgPrice">-</div>
-                        <div class="stat-label">Average Price</div>
+                
+                <div class="stat-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Average Price</p>
+                            <p class="text-2xl font-bold text-gray-800" id="avgPrice">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-euro-sign text-white"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <div class="stat-value" id="recentProperties">-</div>
-                        <div class="stat-label">Added Today</div>
+                
+                <div class="stat-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">New Today</p>
+                            <p class="text-2xl font-bold text-gray-800" id="newToday">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-plus text-white"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <div class="stat-value" id="topOffers">-</div>
-                        <div class="stat-label">Top Offers</div>
+                
+                <div class="stat-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Top Offers</p>
+                            <p class="text-2xl font-bold text-gray-800" id="topOffers">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-star text-white"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="row">
-            <!-- Filters Sidebar -->
-            <div class="col-lg-3">
-                <div class="card filters-card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters</h5>
+        <!-- Main Content Area -->
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Smart Search Sidebar -->
+            <div class="lg:w-80 slide-in-left">
+                <div class="filters-glass rounded-2xl p-6 sticky top-24">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-display text-lg font-semibold text-gray-800">Smart Search</h3>
+                        <button onclick="clearAllFilters()" class="text-sm text-gray-500 hover:text-red-500 transition-colors">
+                            Clear All
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <!-- Quick Filters -->
-                        <div class="filter-section">
-                            <label class="form-label">Quick Filters</label>
-                            <div class="quick-filters">
-                                <button class="quick-filter-btn" data-filter="top-offers" onclick="toggleQuickFilter(this, 'isTopOffer', true)">
-                                    <i class="fas fa-star me-1"></i>TOP
-                                </button>
-                                <button class="quick-filter-btn" data-filter="vip-offers" onclick="toggleQuickFilter(this, 'isVipOffer', true)">
-                                    <i class="fas fa-crown me-1"></i>VIP
-                                </button>
-                                <button class="quick-filter-btn" data-filter="recent" onclick="toggleQuickFilter(this, 'recent', true)">
-                                    <i class="fas fa-clock me-1"></i>Recent
-                                </button>
-                                <button class="quick-filter-btn" data-filter="with-images" onclick="toggleQuickFilter(this, 'hasImages', true)">
-                                    <i class="fas fa-image me-1"></i>Images
-                                </button>
-                            </div>
+
+                    <!-- Quick Search -->
+                    <div class="mb-6">
+                        <div class="relative">
+                            <input type="text" 
+                                   placeholder="Search locations, keywords..." 
+                                   class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         </div>
-                        
-                        <!-- City Filter with Autocomplete -->
-                        <div class="filter-section">
-                            <label class="form-label">City</label>
-                            <input type="text" class="form-control" id="cityFilter" placeholder="Search cities..." list="citiesList">
-                            <datalist id="citiesList"></datalist>
-                        </div>
-                        
-                        <!-- Price Range Slider -->
-                        <div class="filter-section">
-                            <label class="form-label">Price Range (EUR)</label>
-                            <div class="price-range-container">
-                                <div id="priceRange"></div>
-                                <div class="price-range-values">
-                                    <span id="minPriceValue">500</span>
-                                    <span id="maxPriceValue">5000</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Area Range -->
-                        <div class="filter-section">
-                            <label class="form-label">Area Range (m²)</label>
-                            <div class="row">
-                                <div class="col">
-                                    <input type="number" class="form-control" id="minArea" placeholder="Min">
-                                </div>
-                                <div class="col">
-                                    <input type="number" class="form-control" id="maxArea" placeholder="Max">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Rooms Filter -->
-                        <div class="filter-section">
-                            <label class="form-label">Rooms</label>
-                            <div class="quick-filters">
-                                <button class="quick-filter-btn" data-rooms="1" onclick="toggleRoomFilter(this, 1)">1</button>
-                                <button class="quick-filter-btn" data-rooms="2" onclick="toggleRoomFilter(this, 2)">2</button>
-                                <button class="quick-filter-btn" data-rooms="3" onclick="toggleRoomFilter(this, 3)">3</button>
-                                <button class="quick-filter-btn" data-rooms="4" onclick="toggleRoomFilter(this, 4)">4+</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Property Type -->
-                        <div class="filter-section">
-                            <label class="form-label">Property Type</label>
-                            <select class="form-select" id="propertyTypeFilter">
-                                <option value="">All Types</option>
-                                <option value="Апартамент">Apartment</option>
-                                <option value="Къща">House</option>
-                                <option value="Студио">Studio</option>
-                                <option value="Мезонет">Maisonette</option>
-                                <option value="Етаж">Floor</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Floor Range -->
-                        <div class="filter-section">
-                            <label class="form-label">Floor Range</label>
-                            <div class="row">
-                                <div class="col">
-                                    <input type="number" class="form-control" id="minFloor" placeholder="Min">
-                                </div>
-                                <div class="col">
-                                    <input type="number" class="form-control" id="maxFloor" placeholder="Max">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-primary" onclick="applyFilters()">
-                                <i class="fas fa-search me-2"></i>Apply Filters
+                    </div>
+
+                    <!-- Quick Filters -->
+                    <div class="mb-6">
+                        <h4 class="font-medium text-gray-700 mb-3">Quick Filters</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="quick-filter px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200" 
+                                    data-filter="top-offers">
+                                <i class="fas fa-star mr-1"></i>TOP
                             </button>
-                            <button class="btn btn-outline-secondary" onclick="clearFilters()">
-                                <i class="fas fa-times me-2"></i>Clear All
+                            <button class="quick-filter px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200" 
+                                    data-filter="vip-offers">
+                                <i class="fas fa-crown mr-1"></i>VIP
                             </button>
-                            <button class="btn btn-outline-primary" onclick="saveSearch()">
-                                <i class="fas fa-bookmark me-2"></i>Save Search
+                            <button class="quick-filter px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200" 
+                                    data-filter="recent">
+                                <i class="fas fa-clock mr-1"></i>Recent
+                            </button>
+                            <button class="quick-filter px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition-all duration-200" 
+                                    data-filter="with-images">
+                                <i class="fas fa-image mr-1"></i>Photos
                             </button>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Recently Viewed -->
-                <div class="card filters-card mt-3" id="recentlyViewedCard" style="display: none;">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recently Viewed</h6>
+
+                    <!-- Price Range -->
+                    <div class="mb-6">
+                        <h4 class="font-medium text-gray-700 mb-3">Price Range (EUR)</h4>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div class="relative">
+                                <input type="number" placeholder="Min" id="minPrice" 
+                                       class="price-input w-full px-3 py-2 rounded-lg text-sm">
+                                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs">€</span>
+                            </div>
+                            <div class="relative">
+                                <input type="number" placeholder="Max" id="maxPrice" 
+                                       class="price-input w-full px-3 py-2 rounded-lg text-sm">
+                                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs">€</span>
+                            </div>
+                        </div>
+                        <div id="priceSlider" class="mt-4"></div>
                     </div>
-                    <div class="card-body" id="recentlyViewedList">
-                        <!-- Recently viewed properties will be populated here -->
+
+                    <!-- Property Type -->
+                    <div class="mb-6">
+                        <h4 class="font-medium text-gray-700 mb-3">Property Type</h4>
+                        <select id="propertyType" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200">
+                            <option value="">All Types</option>
+                            <option value="apartment">Apartment</option>
+                            <option value="studio">Studio</option>
+                            <option value="house">House</option>
+                            <option value="office">Office</option>
+                        </select>
+                    </div>
+
+                    <!-- Rooms -->
+                    <div class="mb-6">
+                        <h4 class="font-medium text-gray-700 mb-3">Rooms</h4>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button class="room-btn px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-blue-500 hover:text-white transition-all duration-200" data-rooms="1">1</button>
+                            <button class="room-btn px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-blue-500 hover:text-white transition-all duration-200" data-rooms="2">2</button>
+                            <button class="room-btn px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-blue-500 hover:text-white transition-all duration-200" data-rooms="3">3</button>
+                            <button class="room-btn px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-blue-500 hover:text-white transition-all duration-200" data-rooms="4+">4+</button>
+                        </div>
+                    </div>
+
+                    <!-- Area Range -->
+                    <div class="mb-6">
+                        <h4 class="font-medium text-gray-700 mb-3">Area (m²)</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="number" placeholder="Min m²" id="minArea" 
+                                   class="price-input w-full px-3 py-2 rounded-lg text-sm">
+                            <input type="number" placeholder="Max m²" id="maxArea" 
+                                   class="price-input w-full px-3 py-2 rounded-lg text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Search Button -->
+                    <button onclick="applyFilters()" class="btn-gradient-primary w-full py-3 rounded-xl text-white font-semibold transition-all duration-300">
+                        <i class="fas fa-search mr-2"></i>Search Properties
+                    </button>
+
+                    <!-- Saved Searches -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h4 class="font-medium text-gray-700 mb-3">Saved Searches</h4>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                                <div class="flex items-center">
+                                    <i class="fas fa-bookmark text-blue-500 mr-2"></i>
+                                    <span class="text-sm text-gray-700">Sofia Center 800-1200€</span>
+                                </div>
+                                <button class="text-gray-400 hover:text-red-500 transition-colors">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button class="w-full mt-2 py-2 text-sm text-blue-600 hover:text-blue-800 transition-colors">
+                            + Save Current Search
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Properties Content -->
-            <div class="col-lg-9">
-                <!-- Sort and View Controls -->
-                <div class="sort-controls" id="sortControls" style="display: none;">
-                    <div class="results-count" id="resultsCount">Loading...</div>
-                    <div class="ms-auto d-flex align-items-center gap-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <label class="form-label mb-0">Sort by:</label>
-                            <select class="form-select" id="sortSelect" onchange="applySorting()" style="width: auto;">
+            <!-- Main Content -->
+            <div class="flex-1">
+                <!-- Search View -->
+                <div id="searchView" class="view-content">
+                    <!-- View Controls -->
+                    <div class="glass rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div class="flex items-center space-x-4">
+                            <span id="resultsCount" class="text-gray-600 font-medium">Loading properties...</span>
+                        </div>
+                        
+                        <div class="flex items-center space-x-4">
+                            <!-- Sort Options -->
+                            <select id="sortSelect" onchange="applySorting()" class="px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none text-sm">
                                 <option value="date-desc">Newest First</option>
-                                <option value="date-asc">Oldest First</option>
                                 <option value="price-asc">Price: Low to High</option>
                                 <option value="price-desc">Price: High to Low</option>
-                                <option value="area-desc">Area: Large to Small</option>
-                                <option value="area-asc">Area: Small to Large</option>
-                                <option value="price-per-sqm-asc">Price/m²: Low to High</option>
+                                <option value="area-desc">Largest First</option>
                             </select>
+
+                            <!-- View Toggle -->
+                            <div class="flex rounded-lg border border-gray-200 overflow-hidden">
+                                <button onclick="setView('grid')" class="view-btn px-3 py-2 text-sm bg-blue-500 text-white">
+                                    <i class="fas fa-th"></i>
+                                </button>
+                                <button onclick="setView('list')" class="view-btn px-3 py-2 text-sm bg-white text-gray-600 hover:bg-gray-50">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                                <button onclick="setView('map')" class="view-btn px-3 py-2 text-sm bg-white text-gray-600 hover:bg-gray-50">
+                                    <i class="fas fa-map"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="view-toggle">
-                            <button class="active" id="gridViewBtn" onclick="setView('grid')" title="Grid View">
-                                <i class="fas fa-th"></i>
-                            </button>
-                            <button id="compactViewBtn" onclick="setView('compact')" title="Compact Grid">
-                                <i class="fas fa-th-large"></i>
-                            </button>
-                            <button id="listViewBtn" onclick="setView('list')" title="List View">
-                                <i class="fas fa-list"></i>
-                            </button>
-                            <button id="mapViewBtn" onclick="setView('map')" title="Map View">
-                                <i class="fas fa-map"></i>
+                    </div>
+
+                    <!-- Properties Grid -->
+                    <div id="propertiesContainer" class="properties-masonry"></div>
+
+                    <!-- Loading State -->
+                    <div id="loadingState" class="text-center py-12">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                        <p class="mt-4 text-gray-600">Discovering amazing properties...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="text-center py-12 hidden">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-search text-gray-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">No properties found</h3>
+                        <p class="text-gray-600 mb-4">Try adjusting your search criteria or check back later for new listings.</p>
+                        <button onclick="clearAllFilters()" class="btn-gradient-primary px-6 py-2 rounded-lg text-white font-medium">
+                            Clear Filters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Trends View -->
+                <div id="trendsView" class="view-content hidden">
+                    <div class="glass rounded-2xl p-6 mb-6">
+                        <h2 class="font-display text-2xl font-bold text-gray-800 mb-2">Market Intelligence</h2>
+                        <p class="text-gray-600 mb-6">Comprehensive market analysis and trends</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <select id="trendsPeriod" onchange="loadTrends()" class="px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none">
+                                <option value="7">Last 7 days</option>
+                                <option value="30" selected>Last 30 days</option>
+                                <option value="90">Last 3 months</option>
+                            </select>
+                            <select id="trendsCity" onchange="loadTrends()" class="px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none">
+                                <option value="">All Cities</option>
+                                <option value="Sofia">Sofia</option>
+                                <option value="Plovdiv">Plovdiv</option>
+                            </select>
+                            <button onclick="loadTrends()" class="btn-gradient-accent px-4 py-2 rounded-lg text-white font-medium">
+                                <i class="fas fa-refresh mr-2"></i>Refresh
                             </button>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Loading State -->
-                <div id="loading" class="loading">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
+
+                    <div id="trendsContent">
+                        <!-- Trends content will be loaded here -->
                     </div>
-                    <p class="mt-2">Loading properties...</p>
                 </div>
-                
-                <!-- Properties Grid View -->
-                <div id="propertiesContainer" style="display: none;"></div>
-                
-                <!-- Properties List View -->
-                <div id="propertiesListContainer" class="" style="display: none;"></div>
-                
-                <!-- Map View -->
-                <div id="mapView" style="display: none;">
-                    <div id="mapContainer"></div>
-                </div>
-                
-                <!-- No Properties State -->
-                <div id="noProperties" class="no-properties" style="display: none;">
-                    <i class="fas fa-search fa-3x mb-3"></i>
-                    <h4>No properties found</h4>
-                    <p>Try adjusting your search filters or check back later for new listings</p>
-                    <button class="btn btn-primary mt-2" onclick="clearFilters()">
-                        <i class="fas fa-refresh me-2"></i>Clear Filters
-                    </button>
-                </div>
-                
+
                 <!-- Favorites View -->
-                <div id="favoritesView" style="display: none;">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4><i class="fas fa-heart me-2"></i>Your Favorites</h4>
-                        <button class="btn btn-outline-secondary" onclick="toggleFavoritesView()">
-                            <i class="fas fa-arrow-left me-2"></i>Back to Search
-                        </button>
+                <div id="favoritesView" class="view-content hidden">
+                    <div class="glass rounded-2xl p-6 mb-6">
+                        <h2 class="font-display text-2xl font-bold text-gray-800 mb-2">Your Favorites</h2>
+                        <p class="text-gray-600">Properties you've saved for later</p>
                     </div>
-                    <div id="favoritesContainer" class="row"></div>
+                    <div id="favoritesContainer">
+                        <!-- Favorites will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Admin View -->
+                <div id="adminView" class="view-content hidden">
+                    <!-- Admin Header -->
+                    <div class="glass rounded-2xl p-6 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="font-display text-2xl font-bold text-gray-800 mb-2">Crawler Administration</h2>
+                                <p class="text-gray-600">Manage crawler settings, view logs, and monitor performance</p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div id="crawlerStatus" class="flex items-center px-3 py-1 rounded-full text-sm font-medium">
+                                    <div class="w-2 h-2 rounded-full mr-2"></div>
+                                    <span>Loading...</span>
+                                </div>
+                                <button onclick="refreshAdminData()" class="btn-micro p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Tabs -->
+                    <div class="glass rounded-2xl mb-6">
+                        <div class="flex border-b border-gray-200">
+                            <button onclick="showAdminTab('dashboard')" class="admin-tab px-6 py-4 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                            </button>
+                            <button onclick="showAdminTab('config')" class="admin-tab px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-cog mr-2"></i>Configuration
+                            </button>
+                            <button onclick="showAdminTab('logs')" class="admin-tab px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-list-alt mr-2"></i>Logs & Activity
+                            </button>
+                            <button onclick="showAdminTab('test')" class="admin-tab px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-flask mr-2"></i>Test Crawler
+                            </button>
+                            <button onclick="showAdminTab('metrics')" class="admin-tab px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-chart-bar mr-2"></i>Performance
+                            </button>
+                            <button onclick="showAdminTab('parsers')" class="admin-tab px-6 py-4 text-sm font-medium text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-code mr-2"></i>Parser Sites
+                            </button>
+                        </div>
+
+                        <!-- Dashboard Tab -->
+                        <div id="adminDashboardTab" class="admin-tab-content p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                <!-- System Status -->
+                                <div class="stat-card rounded-xl p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="font-semibold text-gray-800">System Status</h3>
+                                        <div id="systemStatusIcon" class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                            <i class="fas fa-check text-green-600"></i>
+                                        </div>
+                                    </div>
+                                    <div id="systemStatusText" class="text-sm text-gray-600">All systems operational</div>
+                                </div>
+
+                                <!-- Recent Activity -->
+                                <div class="stat-card rounded-xl p-6">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="font-semibold text-gray-800">Recent Activity</h3>
+                                        <i class="fas fa-clock text-gray-400"></i>
+                                    </div>
+                                    <div id="recentActivityText" class="text-sm text-gray-600">Loading...</div>
+                                </div>
+
+                                <!-- Quick Actions -->
+                                <div class="stat-card rounded-xl p-6">
+                                    <h3 class="font-semibold text-gray-800 mb-4">Quick Actions</h3>
+                                    <div class="space-y-2">
+                                        <button onclick="startCrawler()" class="w-full btn-gradient-primary py-2 rounded-lg text-white text-sm font-medium">
+                                            <i class="fas fa-play mr-2"></i>Start Crawler
+                                        </button>
+                                        <button onclick="stopCrawler()" class="w-full bg-red-500 hover:bg-red-600 py-2 rounded-lg text-white text-sm font-medium transition-colors">
+                                            <i class="fas fa-stop mr-2"></i>Stop Crawler
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Real-time Stats -->
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="stat-card rounded-xl p-4">
+                                    <div class="text-2xl font-bold text-gray-800" id="totalPropertiesScraped">-</div>
+                                    <div class="text-sm text-gray-600">Total Properties</div>
+                                </div>
+                                <div class="stat-card rounded-xl p-4">
+                                    <div class="text-2xl font-bold text-blue-600" id="propertiesLastHour">-</div>
+                                    <div class="text-sm text-gray-600">Last Hour</div>
+                                </div>
+                                <div class="stat-card rounded-xl p-4">
+                                    <div class="text-2xl font-bold text-green-600" id="propertiesLast24h">-</div>
+                                    <div class="text-sm text-gray-600">Last 24 Hours</div>
+                                </div>
+                                <div class="stat-card rounded-xl p-4">
+                                    <div class="text-2xl font-bold text-gray-600" id="lastUpdateTime">-</div>
+                                    <div class="text-sm text-gray-600">Last Update</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuration Tab -->
+                        <div id="adminConfigTab" class="admin-tab-content p-6 hidden">
+                            <div class="max-w-4xl">
+                                <form id="crawlerConfigForm" class="space-y-6">
+                                    <!-- Monitoring Settings -->
+                                    <div class="bg-gray-50 rounded-xl p-6">
+                                        <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                            <i class="fas fa-clock mr-2 text-blue-600"></i>Monitoring Settings
+                                        </h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Enable Monitoring</label>
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" id="monitoringEnabled" class="rounded border-gray-300 mr-2">
+                                                    <span class="text-sm text-gray-700">Automatic monitoring enabled</span>
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Check Interval</label>
+                                                <select id="checkInterval" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none">
+                                                    <option value="*/5 * * * *">Every 5 minutes</option>
+                                                    <option value="*/10 * * * *">Every 10 minutes</option>
+                                                    <option value="*/15 * * * *">Every 15 minutes</option>
+                                                    <option value="*/30 * * * *">Every 30 minutes</option>
+                                                    <option value="0 * * * *">Every hour</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Price Filters -->
+                                    <div class="bg-gray-50 rounded-xl p-6">
+                                        <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                            <i class="fas fa-euro-sign mr-2 text-green-600"></i>Price Filters
+                                        </h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Price (EUR)</label>
+                                                <input type="number" id="configMinPrice" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Maximum Price (EUR)</label>
+                                                <input type="number" id="configMaxPrice" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="2000">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Email Notifications -->
+                                    <div class="bg-gray-50 rounded-xl p-6">
+                                        <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                            <i class="fas fa-envelope mr-2 text-blue-600"></i>Email Notifications
+                                        </h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Enable Email</label>
+                                                <label class="flex items-center">
+                                                    <input type="checkbox" id="emailEnabled" class="rounded border-gray-300 mr-2">
+                                                    <span class="text-sm text-gray-700">Send email notifications</span>
+                                                </label>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                                <input type="email" id="emailTo" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="your@email.com">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Save Configuration -->
+                                    <div class="flex justify-end space-x-3">
+                                        <button type="button" onclick="loadCrawlerConfig()" class="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+                                            Reset
+                                        </button>
+                                        <button type="submit" class="btn-gradient-primary px-6 py-2 rounded-lg text-white font-medium">
+                                            <i class="fas fa-save mr-2"></i>Save Configuration
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Logs Tab -->
+                        <div id="adminLogsTab" class="admin-tab-content p-6 hidden">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="font-semibold text-gray-800">Crawler Activity Logs</h3>
+                                <div class="flex items-center space-x-3">
+                                    <select id="logSessionType" onchange="loadCrawlerLogs()" class="px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none text-sm">
+                                        <option value="monitoring_cycle">Monitoring Sessions</option>
+                                        <option value="manual_trigger">Manual Runs</option>
+                                        <option value="test_run">Test Runs</option>
+                                    </select>
+                                    <button onclick="loadCrawlerLogs()" class="btn-micro p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="crawlerLogsContainer" class="space-y-4">
+                                <!-- Logs will be loaded here -->
+                            </div>
+                        </div>
+
+                        <!-- Test Tab -->
+                        <div id="adminTestTab" class="admin-tab-content p-6 hidden">
+                            <div class="max-w-2xl">
+                                <h3 class="font-semibold text-gray-800 mb-4">Test Crawler Configuration</h3>
+                                <p class="text-gray-600 mb-6">Run a quick test to verify your crawler setup is working correctly.</p>
+                                
+                                <form id="testCrawlerForm" class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Test URL</label>
+                                        <input type="url" id="testUrl" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="https://ues.bg/bg/find?..." required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Max Pages to Test</label>
+                                        <select id="testMaxPages" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none">
+                                            <option value="1">1 page (fastest)</option>
+                                            <option value="2">2 pages</option>
+                                            <option value="3">3 pages</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn-gradient-accent w-full py-3 rounded-lg text-white font-medium">
+                                        <i class="fas fa-flask mr-2"></i>Run Test
+                                    </button>
+                                </form>
+
+                                <div id="testResults" class="mt-6 hidden">
+                                    <h4 class="font-semibold text-gray-800 mb-3">Test Results</h4>
+                                    <div id="testResultsContent" class="bg-gray-50 rounded-lg p-4">
+                                        <!-- Results will appear here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics Tab -->
+                        <div id="adminMetricsTab" class="admin-tab-content p-6 hidden">
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-semibold text-gray-800">Performance Metrics</h3>
+                                    <select id="metricsTimeframe" onchange="loadCrawlerMetrics()" class="px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none text-sm">
+                                        <option value="1">Last 24 hours</option>
+                                        <option value="7" selected>Last 7 days</option>
+                                        <option value="30">Last 30 days</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <div class="stat-card rounded-xl p-6">
+                                        <div class="text-2xl font-bold text-gray-800" id="totalSessions">-</div>
+                                        <div class="text-sm text-gray-600">Total Sessions</div>
+                                        <div class="text-xs text-green-600 mt-1" id="successfulSessions">-</div>
+                                    </div>
+                                    <div class="stat-card rounded-xl p-6">
+                                        <div class="text-2xl font-bold text-blue-600" id="avgDuration">-</div>
+                                        <div class="text-sm text-gray-600">Avg Duration</div>
+                                    </div>
+                                    <div class="stat-card rounded-xl p-6">
+                                        <div class="text-2xl font-bold text-green-600" id="successRate">-%</div>
+                                        <div class="text-sm text-gray-600">Success Rate</div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 rounded-xl p-6">
+                                    <h4 class="font-semibold text-gray-800 mb-4">Common Errors</h4>
+                                    <div id="topErrorsList" class="space-y-2">
+                                        <!-- Error list will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parser Sites Tab -->
+                        <div id="adminParsersTab" class="admin-tab-content p-6 hidden">
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h3 class="font-semibold text-gray-800 text-lg">Parser Site Management</h3>
+                                        <p class="text-gray-600 text-sm mt-1">Configure parsing rules for different real estate websites</p>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <button onclick="addNewParserSite()" class="btn-gradient-primary px-4 py-2 rounded-lg text-white text-sm font-medium">
+                                            <i class="fas fa-plus mr-2"></i>Add Site
+                                        </button>
+                                        <button onclick="exportParserConfig()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium">
+                                            <i class="fas fa-download mr-2"></i>Export
+                                        </button>
+                                        <button onclick="importParserConfig()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium">
+                                            <i class="fas fa-upload mr-2"></i>Import
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Parser Sites List -->
+                                <div id="parserSitesList" class="space-y-4">
+                                    <!-- Sites will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parser Site Editor Modal -->
+                        <div id="parserSiteModal" class="fixed inset-0 modal-glass hidden z-50 flex items-center justify-center p-4">
+                            <div class="modal-content-glass rounded-2xl p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+                                <div class="flex items-center justify-between mb-6">
+                                    <h3 class="font-display text-xl font-bold text-gray-800" id="parserModalTitle">Configure Parser Site</h3>
+                                    <button onclick="closeParserSiteModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                        <i class="fas fa-times text-xl"></i>
+                                    </button>
+                                </div>
+                                
+                                <form id="parserSiteForm" class="space-y-6">
+                                    <!-- Basic Site Information -->
+                                    <div class="bg-gray-50 rounded-xl p-6">
+                                        <h4 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                            <i class="fas fa-globe mr-2 text-blue-600"></i>Site Information
+                                        </h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Site ID</label>
+                                                <input type="text" id="siteId" required class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="e.g., ues_bg">
+                                                <p class="text-xs text-gray-500 mt-1">Unique identifier (no spaces, lowercase recommended)</p>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Site Name</label>
+                                                <input type="text" id="siteName" required class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="e.g., UES.bg">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Base URL</label>
+                                                <input type="url" id="baseUrl" required class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="https://example.com">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Max Pages</label>
+                                                <input type="number" id="maxPages" value="3" min="1" max="20" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none">
+                                            </div>
+                                        </div>
+                                        <div class="mt-4">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Search URLs</label>
+                                            <div id="searchUrlsContainer" class="space-y-2">
+                                                <div class="flex items-center space-x-2">
+                                                    <input type="url" class="search-url flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="https://example.com/search?...">
+                                                    <button type="button" onclick="removeSearchUrl(this)" class="px-3 py-2 text-red-600 hover:text-red-800 transition-colors">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <button type="button" onclick="addSearchUrl()" class="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                                <i class="fas fa-plus mr-1"></i>Add Search URL
+                                            </button>
+                                        </div>
+                                        <div class="mt-4">
+                                            <label class="flex items-center">
+                                                <input type="checkbox" id="siteEnabled" checked class="rounded border-gray-300 mr-2">
+                                                <span class="text-sm text-gray-700">Site enabled for crawling</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- List Page Selectors -->
+                                    <div class="bg-gray-50 rounded-xl p-6">
+                                        <h4 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                            <i class="fas fa-list mr-2 text-green-600"></i>List Page Selectors
+                                        </h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Property Links</label>
+                                                <input type="text" id="propertyLinks" required class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="a[href*='/property/']">
+                                                <p class="text-xs text-gray-500 mt-1">CSS selector for property links</p>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Next Page Button</label>
+                                                <input type="text" id="nextPageButton" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder=".pagination .next">
+                                                <p class="text-xs text-gray-500 mt-1">Optional: CSS selector for next page</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Field Selectors -->
+                                    <div class="bg-gray-50 rounded-xl p-6">
+                                        <h4 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                            <i class="fas fa-tags mr-2 text-purple-600"></i>Property Field Selectors
+                                        </h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="fieldSelectorsContainer">
+                                            <!-- Field selectors will be generated here -->
+                                        </div>
+                                        <div class="mt-4 text-center">
+                                            <button type="button" onclick="testSelectors()" class="btn-gradient-accent px-6 py-2 rounded-lg text-white font-medium">
+                                                <i class="fas fa-vial mr-2"></i>Test Selectors
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Test URL for Selector Testing -->
+                                    <div class="bg-gray-50 rounded-xl p-6">
+                                        <h4 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                            <i class="fas fa-flask mr-2 text-orange-600"></i>Selector Testing
+                                        </h4>
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Test URL</label>
+                                                <input type="url" id="testUrl" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="URL of a property page to test selectors">
+                                            </div>
+                                            <div id="selectorTestResults" class="hidden">
+                                                <h5 class="font-medium text-gray-700 mb-2">Test Results</h5>
+                                                <div id="testResultsContent" class="space-y-2 max-h-64 overflow-y-auto">
+                                                    <!-- Test results will appear here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Advanced Settings -->
+                                    <div class="bg-gray-50 rounded-xl p-6">
+                                        <h4 class="font-semibold text-gray-800 mb-4 flex items-center">
+                                            <i class="fas fa-cogs mr-2 text-gray-600"></i>Advanced Settings
+                                        </h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Wait Between Pages (ms)</label>
+                                                <input type="number" id="betweenPages" value="2000" min="500" max="10000" step="500" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Wait Between Properties (ms)</label>
+                                                <input type="number" id="betweenProperties" value="1000" min="200" max="5000" step="200" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none">
+                                            </div>
+                                            <div class="md:col-span-2">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">User Agent</label>
+                                                <input type="text" id="userAgent" class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none" placeholder="Leave empty for default">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Save/Cancel Buttons -->
+                                    <div class="flex justify-end space-x-3">
+                                        <button type="button" onclick="closeParserSiteModal()" class="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" class="btn-gradient-primary px-6 py-2 rounded-lg text-white font-medium">
+                                            <i class="fas fa-save mr-2"></i>Save Parser Site
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="scrollToTop()">
+        <i class="fas fa-arrow-up text-white"></i>
+    </button>
+
+    <!-- Advanced Search Modal -->
+    <div id="advancedSearchModal" class="fixed inset-0 modal-glass hidden z-50 flex items-center justify-center p-4">
+        <div class="modal-content-glass rounded-2xl p-6 w-full max-w-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="font-display text-xl font-bold text-gray-800">Advanced Search</h3>
+                <button onclick="toggleAdvancedSearch()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Additional filters would go here -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Commute Time</label>
+                    <select class="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-400 outline-none">
+                        <option>Any</option>
+                        <option>Within 15 min to city center</option>
+                        <option>Within 30 min to city center</option>
+                    </select>
                 </div>
                 
-                <!-- Pagination -->
-                <div id="paginationContainer" class="pagination-container" style="display: none;"></div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="rounded border-gray-300 mr-2">
+                            <span class="text-sm text-gray-700">Parking</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="rounded border-gray-300 mr-2">
+                            <span class="text-sm text-gray-700">Elevator</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="rounded border-gray-300 mr-2">
+                            <span class="text-sm text-gray-700">Balcony</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="toggleAdvancedSearch()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+                    Cancel
+                </button>
+                <button class="btn-gradient-primary px-6 py-2 rounded-lg text-white font-medium">
+                    Apply Filters
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Property Modal -->
-    <div class="modal fade" id="propertyModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header border-0">
-                    <div>
-                        <h4 class="modal-title mb-0" id="modalTitle">Property Details</h4>
-                        <small class="text-muted" id="modalSubtitle"></small>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-outline-primary btn-sm" id="modalFavoriteBtn" onclick="toggleFavoriteModal()">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary btn-sm" id="modalCompareBtn" onclick="addToComparison()">
-                            <i class="fas fa-balance-scale"></i>
-                        </button>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="modal-body p-0" id="modalBody">
-                    <div class="text-center p-5">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-3">Loading property details...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Property Comparison Modal -->
-    <div class="modal fade" id="comparisonModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Property Comparison</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="comparisonBody">
-                    <!-- Comparison content will be populated here -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js"></script>
-    <script src="app.js"></script>
+    <script src="app-enhanced.js"></script>
+    <script src="parser-management.js"></script>
 </body>
 </html>
