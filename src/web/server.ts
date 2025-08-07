@@ -132,7 +132,8 @@ app.get('/api/properties', async (req, res) => {
         pl.longitude,
         ps.is_top_offer,
         ps.is_vip_offer,
-        ps.labels
+        ps.labels,
+        (SELECT thumbnail_url FROM property_media WHERE property_id = p.id AND media_type = 'image' ORDER BY display_order LIMIT 1) as thumbnail_url
       FROM properties p
       LEFT JOIN property_pricing pp ON p.id = pp.property_id
       LEFT JOIN property_details pd ON p.id = pd.property_id
