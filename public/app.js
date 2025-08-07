@@ -308,7 +308,7 @@ PropertyApp.prototype.displayGridView = function(properties) {
     const mapView = document.getElementById('mapView');
     
     // Show/hide appropriate containers
-    container.style.display = 'block';
+    container.style.display = 'grid';
     listContainer.style.display = 'none';
     mapView.style.display = 'none';
     
