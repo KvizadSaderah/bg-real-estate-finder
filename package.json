@@ -34,7 +34,19 @@
     "crawler": "ts-node src/cli-parser-crawler.ts",
     "crawler:run": "ts-node src/cli-parser-crawler.ts run",
     "crawler:test": "ts-node src/cli-parser-crawler.ts test",
-    "crawler:list": "ts-node src/cli-parser-crawler.ts list"
+    "crawler:list": "ts-node src/cli-parser-crawler.ts list",
+    "aggregator": "ts-node src/cli-aggregator.ts",
+    "aggregator:setup": "ts-node src/cli-aggregator.ts setup-all",
+    "aggregator:list": "ts-node src/cli-aggregator.ts list",
+    "aggregator:run": "ts-node src/cli-aggregator.ts run",
+    "aggregator:stats": "ts-node src/cli-aggregator.ts stats",
+    "aggregator:analyze": "ts-node src/cli-aggregator.ts analyze",
+    "auto": "ts-node src/cli-auto-aggregator.ts",
+    "auto:setup": "ts-node src/cli-auto-aggregator.ts setup",
+    "auto:start": "ts-node src/cli-auto-aggregator.ts start",
+    "auto:once": "ts-node src/cli-auto-aggregator.ts start --once",
+    "auto:config": "ts-node src/cli-auto-aggregator.ts config",
+    "auto:status": "ts-node src/cli-auto-aggregator.ts status"
   },
   "keywords": [
     "real-estate",
