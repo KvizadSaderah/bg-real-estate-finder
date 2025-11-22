@@ -5,10 +5,11 @@
       "name": "UES.bg",
       "baseUrl": "https://ues.bg",
       "searchUrls": [
-        "https://ues.bg/bg/find?form_action=search&property_type=for_rent&property_kind=apartament&city_id=66"
+        "https://ues.bg/bg/find?form_action=search&property_type=for_rent&property_kind=apartament&city_id=66",
+        "https://ues.bg/bg/find?form_action=search&property_type=for_rent&city_id=66"
       ],
       "enabled": true,
-      "maxPages": 3,
+      "maxPages": 5,
       "selectors": {
         "propertyLinks": "a[href*=\"/bg/for_rent/\"]",
         "nextPageButton": "a.next-page",
@@ -89,6 +90,229 @@
         "features": {
           "selector": ".property-features li, .amenities li, .features-list li",
           "attribute": "text"
+        }
+      },
+      "waitTimes": {
+        "betweenPages": 2000,
+        "betweenProperties": 1000
+      },
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "headers": {
+        "Accept-Language": "bg-BG,bg;q=0.9,en;q=0.8"
+      }
+    },
+    {
+      "id": "luximmo_bg",
+      "name": "Luximmo Finest Estates",
+      "baseUrl": "https://luximmo.bg",
+      "searchUrls": [
+        "https://luximmo.bg/bg/imoti/sofia/naem"
+      ],
+      "enabled": true,
+      "maxPages": 5,
+      "selectors": {
+        "propertyLinks": "a[href*=\"/imot/\"]",
+        "nextPageButton": "a.next, .pagination a:last-child",
+        "title": {
+          "selector": "h1, .property-title",
+          "attribute": "text",
+          "required": true
+        },
+        "price": {
+          "selector": ".price, [class*=\"price\"]",
+          "attribute": "text",
+          "transform": "currency",
+          "regex": "\\d+",
+          "required": true
+        },
+        "area": {
+          "selector": ".area, [class*=\"area\"]",
+          "attribute": "text",
+          "transform": "area",
+          "regex": "\\d+(\\.\\d+)?"
+        },
+        "rooms": {
+          "selector": ".rooms, [class*=\"rooms\"]",
+          "attribute": "text",
+          "transform": "number",
+          "regex": "\\d+"
+        },
+        "city": {
+          "selector": ".location, [class*=\"location\"]",
+          "attribute": "text",
+          "required": true
+        },
+        "description": {
+          "selector": ".description, .property-description",
+          "attribute": "text"
+        },
+        "images": {
+          "selector": ".gallery img, .photos img",
+          "attribute": "src"
+        },
+        "phone": {
+          "selector": ".phone, [class*=\"phone\"]",
+          "attribute": "text",
+          "regex": "\\+?[\\d\\s\\-\\(\\)]+"
+        }
+      },
+      "waitTimes": {
+        "betweenPages": 2500,
+        "betweenProperties": 1200
+      },
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "headers": {
+        "Accept-Language": "bg-BG,bg;q=0.9,en;q=0.8"
+      }
+    },
+    {
+      "id": "bulgarianproperties_com",
+      "name": "Bulgarian Properties",
+      "baseUrl": "https://bulgarianproperties.com",
+      "searchUrls": [
+        "https://bulgarianproperties.com/rentals/sofia"
+      ],
+      "enabled": true,
+      "maxPages": 5,
+      "selectors": {
+        "propertyLinks": "a[href*=\"/property/\"]",
+        "nextPageButton": "a.next-page, .pagination-next",
+        "title": {
+          "selector": "h1.property-title, h1",
+          "attribute": "text",
+          "required": true
+        },
+        "price": {
+          "selector": ".price-value, .property-price",
+          "attribute": "text",
+          "transform": "currency",
+          "regex": "\\d+",
+          "required": true
+        },
+        "area": {
+          "selector": ".area-value, [data-area]",
+          "attribute": "text",
+          "transform": "area",
+          "regex": "\\d+(\\.\\d+)?"
+        },
+        "city": {
+          "selector": ".location-city, .property-location",
+          "attribute": "text",
+          "required": true
+        },
+        "description": {
+          "selector": ".property-description, .description-text",
+          "attribute": "text"
+        },
+        "images": {
+          "selector": ".property-gallery img, .slider img",
+          "attribute": "src"
+        }
+      },
+      "waitTimes": {
+        "betweenPages": 2000,
+        "betweenProperties": 1000
+      },
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "headers": {
+        "Accept-Language": "bg-BG,bg;q=0.9,en;q=0.8"
+      }
+    },
+    {
+      "id": "yavlena_com",
+      "name": "Yavlena (Явлена)",
+      "baseUrl": "https://yavlena.com",
+      "searchUrls": [
+        "https://yavlena.com/bg/properties/rent/sofia"
+      ],
+      "enabled": true,
+      "maxPages": 5,
+      "selectors": {
+        "propertyLinks": "a[href*=\"/property/\"]",
+        "nextPageButton": "a.next, .pagination .next",
+        "title": {
+          "selector": "h1, .property-title",
+          "attribute": "text",
+          "required": true
+        },
+        "price": {
+          "selector": ".price, [class*=\"price\"]",
+          "attribute": "text",
+          "transform": "currency",
+          "regex": "\\d+",
+          "required": true
+        },
+        "area": {
+          "selector": ".area, [class*=\"area\"]",
+          "attribute": "text",
+          "transform": "area",
+          "regex": "\\d+(\\.\\d+)?"
+        },
+        "city": {
+          "selector": ".location, [class*=\"location\"]",
+          "attribute": "text",
+          "required": true
+        },
+        "description": {
+          "selector": ".description",
+          "attribute": "text"
+        },
+        "images": {
+          "selector": ".gallery img",
+          "attribute": "src"
+        }
+      },
+      "waitTimes": {
+        "betweenPages": 2000,
+        "betweenProperties": 1000
+      },
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "headers": {
+        "Accept-Language": "bg-BG,bg;q=0.9,en;q=0.8"
+      }
+    },
+    {
+      "id": "address_bg",
+      "name": "АДРЕС Недвижими имоти",
+      "baseUrl": "https://address.bg",
+      "searchUrls": [
+        "https://address.bg/imoti/naem/sofia"
+      ],
+      "enabled": true,
+      "maxPages": 5,
+      "selectors": {
+        "propertyLinks": "a[href*=\"/imot/\"]",
+        "nextPageButton": "a.next-page",
+        "title": {
+          "selector": "h1",
+          "attribute": "text",
+          "required": true
+        },
+        "price": {
+          "selector": ".price",
+          "attribute": "text",
+          "transform": "currency",
+          "regex": "\\d+",
+          "required": true
+        },
+        "area": {
+          "selector": ".area",
+          "attribute": "text",
+          "transform": "area",
+          "regex": "\\d+(\\.\\d+)?"
+        },
+        "city": {
+          "selector": ".location",
+          "attribute": "text",
+          "required": true
+        },
+        "description": {
+          "selector": ".description",
+          "attribute": "text"
+        },
+        "images": {
+          "selector": ".gallery img",
+          "attribute": "src"
         }
       },
       "waitTimes": {
