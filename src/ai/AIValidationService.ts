@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { realityCheckService, DetailedRealityCheckResult, SOFIA_MARKET_DATA } from './RealityCheckService';
 
 export interface AIProvider {
   name: 'gemini' | 'openai';
@@ -102,54 +103,91 @@ Check for:
   /**
    * Perform reality check on property data
    * Validates if data makes sense for Sofia real estate market
+   * Uses local validation first, AI for detailed analysis
    */
-  async realityCheck(data: PropertyData): Promise<RealityCheckResult> {
-    const prompt = `You are an expert on the Sofia, Bulgaria real estate market. Perform a reality check on this property:
+  async realityCheck(data: PropertyData): Promise<DetailedRealityCheckResult> {
+    // Always perform local reality check first (works without AI)
+    const localCheck = realityCheckService.performDetailedCheck(data);
 
-Price: €${data.price || 0}
-Area: ${data.area || 0} m²
-Rooms: ${data.rooms || 0}
+    // If AI is unavailable or local check failed badly, return local results
+    if (!this.provider.apiKey || localCheck.score < 30) {
+      console.log('    Using local reality check (AI not available or score too low)');
+      return localCheck;
+    }
+
+    // Enhance with AI analysis
+    try {
+      const marketData = SOFIA_MARKET_DATA;
+      const prompt = `You are an expert on the Sofia, Bulgaria real estate market. Analyze this property data:
+
+**Property Details:**
+Title: ${data.title || 'N/A'}
+Price: €${data.price || 'N/A'}/month
+Area: ${data.area || 'N/A'} m²
+Rooms: ${data.rooms || 'N/A'}
 City: ${data.city || 'Unknown'}
-Quarter: ${data.quarter || 'Unknown'}
+Quarter/Neighborhood: ${data.quarter || 'Unknown'}
 Property Type: ${data.propertyType || 'Unknown'}
 
-Assess if this data is realistic for Sofia's real estate market. Respond in JSON:
+**Sofia Market Reference Data:**
+- Typical rental prices:
+  * Studio: €${marketData.rentalPrices.studio.min}-€${marketData.rentalPrices.studio.max} (typical: €${marketData.rentalPrices.studio.typical})
+  * 1-bedroom: €${marketData.rentalPrices.oneBedroom.min}-€${marketData.rentalPrices.oneBedroom.max}
+  * 2-bedroom: €${marketData.rentalPrices.twoBedroom.min}-€${marketData.rentalPrices.twoBedroom.max}
+  * 3-bedroom: €${marketData.rentalPrices.threeBedroom.min}-€${marketData.rentalPrices.threeBedroom.max}
+
+- Price per m²: €${marketData.pricePerSqm.min}-€${marketData.pricePerSqm.max} (typical: €${marketData.pricePerSqm.typical.min}-€${marketData.pricePerSqm.typical.max})
+
+- Known neighborhoods: Center, Lozenets, Mladost, Studentski grad, Vitosha, Dragalevtsi, Boyana, etc.
+
+**Local Validation Results:**
+Score: ${localCheck.score}/100
+Passed: ${localCheck.passed}
+Warnings: ${localCheck.warnings.join('; ')}
+
+**Task:**
+Validate this property data and provide insights. Consider:
+1. Is the price realistic for Sofia?
+2. Does the area make sense for the property type?
+3. Is the location/neighborhood valid?
+4. Are there any red flags or concerns?
+5. Does this look like a genuine listing?
+
+Respond in JSON format:
 {
   "passed": boolean,
-  "score": number (0-100, where 100 is perfectly realistic),
+  "score": number (0-100),
   "checks": {
     "priceRealistic": boolean,
     "areaRealistic": boolean,
     "locationValid": boolean,
     "dataComplete": boolean
   },
-  "warnings": ["list of warnings"],
-  "details": "detailed explanation"
-}
+  "warnings": ["specific warnings"],
+  "details": "detailed analysis explaining your assessment"
+}`;
 
-Sofia market context:
-- Typical rental prices: €400-€3000/month
-- Typical areas: 30-250 m²
-- Known neighborhoods: Center, Lozenets, Mladost, Studentski grad, etc.
-- Price per m²: typically €5-20 for rentals`;
-
-    try {
       const response = await this.callAI(prompt);
-      return this.parseRealityCheckResponse(response);
-    } catch (error) {
-      console.error('Reality check error:', error);
+      const aiResult = this.parseRealityCheckResponse(response);
+
+      // Merge AI results with local check
       return {
-        passed: false,
-        score: 0,
-        checks: {
-          priceRealistic: false,
-          areaRealistic: false,
-          locationValid: false,
-          dataComplete: false
-        },
-        warnings: [`Reality check failed: ${error}`],
-        details: 'AI service unavailable'
+        ...localCheck,
+        // Use average of AI and local scores
+        score: Math.round((aiResult.score + localCheck.score) / 2),
+        // Combine warnings
+        warnings: [...new Set([...localCheck.warnings, ...aiResult.warnings])],
+        // Use AI details if available, otherwise local
+        details: aiResult.details || localCheck.details,
+        // Keep detailed checks from local validation
+        detailedChecks: localCheck.detailedChecks,
+        marketComparison: localCheck.marketComparison
       };
+
+    } catch (error) {
+      console.error('AI reality check error:', error);
+      // Fallback to local check
+      return localCheck;
     }
   }
 

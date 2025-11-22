@@ -125,9 +125,28 @@ program
         const totalChecks = result.aiValidation.realityChecks.length;
         console.log(`  Passed: ${passedChecks}/${totalChecks}`);
 
-        result.aiValidation.realityChecks.forEach((check, i) => {
+        result.aiValidation.realityChecks.forEach((check: any, i) => {
           const status = check.passed ? chalk.green('✓') : chalk.red('✗');
           console.log(`  ${status} Check ${i + 1}: ${check.score}/100`);
+
+          // Show detailed checks if available
+          if (check.detailedChecks) {
+            console.log(chalk.gray('    Detailed breakdown:'));
+            Object.entries(check.detailedChecks).forEach(([key, detail]: [string, any]) => {
+              const icon = detail.passed ? '✓' : '✗';
+              const color = detail.passed ? chalk.green : chalk.yellow;
+              console.log(color(`      ${icon} ${key}: ${detail.actual}`));
+            });
+          }
+
+          // Show market comparison if available
+          if (check.marketComparison) {
+            console.log(chalk.cyan(`    Market: Price is ${check.marketComparison.priceVsMarket}, Area is ${check.marketComparison.areaVsMarket}`));
+            if (check.marketComparison.suggestion) {
+              console.log(chalk.gray(`    💡 ${check.marketComparison.suggestion}`));
+            }
+          }
+
           if (check.warnings.length > 0) {
             check.warnings.forEach(warn => {
               console.log(chalk.yellow(`     ⚠ ${warn}`));
