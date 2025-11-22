@@ -1,118 +1,313 @@
-# 🏠 Real Estate Rental Finder
+# 🏠 Real Estate Aggregator for Sofia, Bulgaria
 
-Умный парсер для поиска объявлений аренды недвижимости с поддержкой фильтрации и автоматического анализа сайтов.
+Automatic real estate aggregator with AI validation, reality checks, and monitoring for Sofia, Bulgaria. Collects listings from 5+ major agencies automatically.
 
-## 🚀 Быстрый старт
+## ✨ Key Features
+
+- 🔄 **Automatic Aggregation** - Monitors 5+ real estate agencies
+- 🤖 **AI Validation** - Quality checks with Google Gemini & OpenAI (optional)
+- ✅ **Reality Check** - Validates prices against Sofia market data (2024-2025)
+- 📊 **Smart Filtering** - Price, area, location, property type
+- 💾 **Database Storage** - PostgreSQL with full history
+- 🌐 **Web Interface** - Beautiful UI for browsing listings
+- 📈 **Analytics** - Market trends, statistics, insights
+- 🆓 **Works Without AI** - Local validation always available
+
+## 🚀 Quick Start
 
 ```bash
-# Установка зависимостей
+# 1. Install dependencies
 npm install
 
-# Поиск аренды в Софии
-npm run rent -- --city sofia --type apartament
+# 2. Initialize database
+npm run db:init
 
-# Поиск с фильтрами цены
-npm run rent -- --city sofia --type apartament --price-min 800 --price-max 1500
+# 3. Setup aggregator (auto-configures 5 agencies)
+npm run auto:setup
 
-# Анализ нового сайта
-npm run analyze https://example-realestate.com
+# 4. Start automatic monitoring
+npm run auto:start
 ```
 
-## 📋 Доступные команды
+**Done!** The system now automatically collects new listings every 15 minutes.
 
-### Поиск аренды
+## 🏢 Configured Agencies
+
+1. ✅ **UES.bg** - Unique Estates
+2. ✅ **Luximmo.bg** - Luximmo Finest Estates
+3. ✅ **BulgarianProperties.com** - Bulgarian Properties
+4. ✅ **Yavlena.com** - Yavlena (Явлена)
+5. ✅ **Address.bg** - АДРЕС Real Estate
+
++ Easily add any other agency automatically!
+
+## 📋 Available Commands
+
+### Automatic Monitoring
+
 ```bash
-npm run rent -- [опции]
+# Start continuous monitoring (every 15 min)
+npm run auto:start
+
+# Single run (for testing)
+npm run auto:once
+
+# Check status
+npm run auto:status
+
+# Configure filters
+npm run auto:config -- --min-price 500 --max-price 2000
 ```
 
-**Опции фильтрации:**
-- `--city <город>` - sofia, plovdiv, varna, burgas, all (по умолчанию: all)
-- `--type <тип>` - apartament, kashta, ofis, studio, staya, all (по умолчанию: all)
-- `--price-min <цена>` - минимальная цена в EUR
-- `--price-max <цена>` - максимальная цена в EUR
-- `--area-min <площадь>` - минимальная площадь в кв.м
-- `--area-max <площадь>` - максимальная площадь в кв.м
-- `--rooms <количество>` - количество комнат (1,2,3,4,5+)
-- `--furnished` - только меблированные объекты
-- `--debug` - показать отладочную информацию
-- `--output <файл>` - имя выходного файла
+### Agency Management
 
-### Анализ сайтов
 ```bash
-npm run analyze <URL> [--save]
+# List all agencies
+npm run aggregator:list
+
+# Add new agency automatically (with AI validation)
+npm run aggregator:analyze https://new-agency.bg --name "Agency" --ai --save
+
+# Enable/disable agency
+npm run aggregator toggle agency_id
+
+# View statistics
+npm run aggregator:stats
 ```
 
-## 📊 Примеры использования
+### Manual Search (Legacy)
 
 ```bash
-# Дешевые студии в Софии
-npm run rent -- --city sofia --type studio --price-max 1000
-
-# 2-комнатные квартиры в Пловдиве  
-npm run rent -- --city plovdiv --type apartament --rooms 2
-
-# Большие квартиры с гаражом
-npm run rent -- --city sofia --area-min 80 --price-max 2000
-
-# Меблированные офисы в центре
-npm run rent -- --city sofia --type ofis --furnished
+npm run rent -- [options]
 ```
 
-## 📁 Структура вывода
+**Filter options:**
+- `--city <city>` - sofia, plovdiv, varna, burgas, all (default: all)
+- `--type <type>` - apartament, kashta, ofis, studio, staya, all (default: all)
+- `--price-min <price>` - minimum price in EUR
+- `--price-max <price>` - maximum price in EUR
+- `--area-min <area>` - minimum area in sqm
+- `--area-max <area>` - maximum area in sqm
+- `--rooms <count>` - number of rooms (1,2,3,4,5+)
+- `--furnished` - furnished properties only
+- `--debug` - show debug info
+- `--output <file>` - output filename
 
-Результаты сохраняются в:
-- `output/rentals/` - результаты поиска аренды
-- `output/sales/` - результаты поиска продаж  
-- `output/analysis/` - результаты анализа сайтов
+## 🤖 AI Validation & Reality Check
 
-## 🏗️ Архитектура
+### Reality Check Features
 
-- **Анализатор сайтов** - автоматически определяет структуру и селекторы
-- **Система конфигураций** - гибкие настройки для разных сайтов
-- **Парсер с фильтрацией** - поддержка пагинации и фильтров
-- **CLI интерфейс** - удобные команды для поиска
+The system validates all listings against **Sofia market data (2024-2025)**:
 
-## 🎯 Поддерживаемые сайты
+✅ **6 Validation Categories:**
+1. **Price Range** - Validates against market by rooms/area
+2. **Price per sqm** - Checks €5-25/m² range (typical €8-15)
+3. **Area Size** - Validates 25-250 m² range
+4. **Rooms to Area** - Checks proper room/area proportions
+5. **Neighborhood** - Validates against 40+ Sofia districts
+6. **Data Completeness** - Checks required fields
 
-- ✅ **ues.bg** - Unique Estates (полная поддержка)
-- 🔄 Другие сайты - через автоанализ
-
-## 📈 Извлекаемые данные
-
-- Заголовок объявления
-- Цена (EUR/BGN/USD)
-- Локация (город, район, адрес)
-- Площадь и количество комнат
-- Тип недвижимости
-- Контактная информация
-- Изображения
-- Ссылки на детальную информацию
-
-## 🔧 Разработка
+### Works WITHOUT AI!
 
 ```bash
-# Компиляция TypeScript
+# Local validation (always works, FREE, <10ms)
+npm run aggregator:analyze https://site.bg --name "Site" --save
+
+# With AI enhancement (optional, requires API key)
+npm run aggregator:analyze https://site.bg --name "Site" --ai --save
+```
+
+### Setup AI (Optional)
+
+```bash
+# 1. Get FREE API key from Google Gemini
+# https://makersuite.google.com/app/apikey
+
+# 2. Create .env file
+cp .env.example .env
+
+# 3. Add your key
+echo "AI_PROVIDER=gemini" >> .env
+echo "GEMINI_API_KEY=your_key_here" >> .env
+```
+
+**AI validates:**
+- ✅ Selector quality
+- ✅ Data correctness
+- ✅ Price realism for Sofia
+- ✅ Information completeness
+
+## 📊 Usage Examples
+
+### Monitor Budget Apartments
+
+```bash
+npm run auto:config -- --min-price 400 --max-price 800 --enable
+npm run auto:config -- --interval "*/5 * * * *"
+npm run auto:start
+```
+
+### Monitor Premium Segment
+
+```bash
+npm run auto:config -- --min-price 2000 --max-price 5000
+npm run auto:start
+```
+
+### Add New Agency
+
+```bash
+npm run aggregator:analyze https://new-agency.bg \
+  --name "New Agency" \
+  --ai \
+  --save
+```
+
+## 📁 Output Structure
+
+Results are saved to:
+- `output/rentals/` - rental search results
+- `output/sales/` - sales search results
+- `output/analysis/` - site analysis results
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│         Automatic Monitoring                │
+│         (every 15 min by default)           │
+└──────────────────┬──────────────────────────┘
+                   │
+        ┌──────────┴──────────┐
+        │                     │
+┌───────▼──────┐    ┌────────▼────────┐
+│   Agencies   │    │   PostgreSQL    │
+│              │    │    Database     │
+│ • UES.bg     │───▶│                 │
+│ • Luximmo    │    │ • Listings      │
+│ • Yavlena    │    │ • History       │
+│ • Address    │    │ • Statistics    │
+│ • ...        │    │                 │
+└──────────────┘    └────────┬────────┘
+                             │
+                    ┌────────▼────────┐
+                    │  Web Interface  │
+                    │  + API          │
+                    │  Port: 3000     │
+                    └─────────────────┘
+```
+
+### Key Components
+
+- **AgencyAnalyzer** - Auto-detects site structure and selectors
+- **RealityCheckService** - Validates data against Sofia market (2024-2025)
+- **AIValidationService** - Optional AI enhancement (Gemini/OpenAI)
+- **Configuration System** - Flexible settings per agency
+- **Parser Engine** - Pagination and filtering support
+- **CLI Interface** - Convenient commands
+
+## 📈 Extracted Data
+
+- Listing title
+- Price (EUR/BGN/USD)
+- Location (city, district, address)
+- Area and number of rooms
+- Property type
+- Contact information
+- Images
+- Detailed listing links
+
+## 🔧 Development
+
+```bash
+# Build TypeScript
 npm run build
 
-# Разработка
+# Run tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Test specific component
+npm run test:reality-check
+
+# Development mode
 npm run dev
 
-# Тестирование анализатора
+# Test analyzer
 npm run analyze https://ues.bg --save
 ```
 
-## 📝 API для программного использования
+## 🧪 Testing
+
+The project includes comprehensive test suites:
+
+- **RealityCheckService** - Tests for all 6 validation categories
+- **AIValidationService** - AI integration tests (with mocks)
+- **AgencyAnalyzer** - Site analysis tests
+- **ApiParser** - Parser functionality tests
+
+Run all tests:
+```bash
+npm test
+```
+
+## 📚 Documentation
+
+- **[README_RU.md](./README_RU.md)** - Russian documentation (Русская документация)
+- **[SETUP.md](./SETUP.md)** - Detailed setup guide
+- **[AGGREGATOR_GUIDE.md](./AGGREGATOR_GUIDE.md)** - Complete aggregator guide
+- **[AI_VALIDATION_GUIDE.md](./AI_VALIDATION_GUIDE.md)** - AI validation guide 🤖
+- **[REALITY_CHECK_IMPROVEMENTS.md](./REALITY_CHECK_IMPROVEMENTS.md)** - Reality Check analysis
+- **[MONITORING_SETUP.md](./MONITORING_SETUP.md)** - Notifications setup
+
+## 📝 API for Programmatic Use
 
 ```typescript
-import { parseRealEstate, parseUESBG } from './src/index';
+import { AgencyAnalyzer } from './src/analyzer/AgencyAnalyzer';
+import { AIValidationService } from './src/ai/AIValidationService';
 
-// Автоматический анализ и парсинг
-const result = await parseRealEstate('https://example.com');
+// Analyze agency site with AI validation
+const analyzer = new AgencyAnalyzer({ useAI: true });
+const result = await analyzer.analyzeAgencySite(
+  'https://example.com',
+  'Example Agency',
+  { maxPages: 3 }
+);
 
-// Специализированный парсер для UES.bg
-const listings = await parseUESBG({ 
-  city: 'sofia', 
-  propertyType: 'apartament',
-  priceMax: 1500
+// Perform reality check
+const aiService = new AIValidationService('gemini', 'your-api-key');
+const realityCheck = await aiService.realityCheck({
+  price: 1200,
+  area: 80,
+  rooms: 2,
+  location: 'Lozenets, Sofia'
 });
+
+console.log(`Reality Score: ${realityCheck.score}/100`);
 ```
+
+## 🛠️ Technologies
+
+- **TypeScript** - Main language
+- **Playwright** - Browser automation
+- **PostgreSQL** - Database
+- **Express** - Web server
+- **Node-cron** - Task scheduler
+- **Cheerio** - HTML parsing
+- **Jest** - Testing framework
+- **Google Gemini API** - AI validation (optional)
+- **OpenAI GPT API** - AI validation (optional)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## 📄 License
+
+MIT
+
+---
+
+**Happy apartment hunting in Sofia! 🏠✨**
