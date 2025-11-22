@@ -1,5 +1,6 @@
 import { chromium, Browser, Page } from 'playwright';
 import { ParserSite, FieldMapping } from '../config/ParserConfig';
+import { AIValidationService, createAIServiceFromEnv, PropertyData, ValidationResult, RealityCheckResult } from '../ai/AIValidationService';
 
 export interface AnalysisResult {
   success: boolean;
@@ -7,6 +8,13 @@ export interface AnalysisResult {
   siteName: string;
   baseUrl: string;
   searchUrls: string[];
+  aiValidation?: {
+    enabled: boolean;
+    selectorQuality: ValidationResult;
+    dataQuality: ValidationResult[];
+    realityChecks: RealityCheckResult[];
+    overallScore: number;
+  };
   detectedSelectors: {
     propertyLinks?: string;
     nextPageButton?: string;
@@ -30,6 +38,21 @@ export interface AnalysisResult {
 
 export class AgencyAnalyzer {
   private browser: Browser | null = null;
+  private aiService: AIValidationService | null = null;
+  private useAI: boolean = false;
+
+  constructor(options: { useAI?: boolean } = {}) {
+    this.useAI = options.useAI ?? false;
+    if (this.useAI) {
+      this.aiService = createAIServiceFromEnv();
+      if (this.aiService) {
+        console.log('  🤖 AI validation enabled');
+      } else {
+        console.log('  ⚠️  AI validation requested but no API key found');
+        this.useAI = false;
+      }
+    }
+  }
 
   async initialize(): Promise<void> {
     if (!this.browser) {
@@ -119,6 +142,12 @@ export class AgencyAnalyzer {
       console.log(`✅ Analysis complete for ${siteName}`);
 
       await page.close();
+
+      // AI-powered validation if enabled
+      if (this.useAI && this.aiService && result.success) {
+        console.log(`  🤖 Running AI validation...`);
+        result.aiValidation = await this.performAIValidation(result, url);
+      }
     } catch (error) {
       result.success = false;
       result.warnings.push(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -126,6 +155,146 @@ export class AgencyAnalyzer {
     }
 
     return result;
+  }
+
+  /**
+   * Perform comprehensive AI validation
+   */
+  private async performAIValidation(
+    result: AnalysisResult,
+    siteUrl: string
+  ): Promise<AnalysisResult['aiValidation']> {
+    if (!this.aiService) {
+      return undefined;
+    }
+
+    const dataQualityResults: ValidationResult[] = [];
+    const realityCheckResults: RealityCheckResult[] = [];
+
+    try {
+      // Validate selector quality
+      console.log(`    🔍 Validating selector quality...`);
+      const selectorQuality = await this.aiService.validateSelectors(
+        result.detectedSelectors,
+        result.sampleData?.exampleListings || [],
+        siteUrl
+      );
+
+      // Validate sample data quality
+      if (result.sampleData?.exampleListings) {
+        console.log(`    🔍 Validating extracted data quality...`);
+        for (const listing of result.sampleData.exampleListings.slice(0, 3)) {
+          const dataValidation = await this.aiService.validatePropertyData(
+            this.convertToPropertyData(listing),
+            siteUrl
+          );
+          dataQualityResults.push(dataValidation);
+
+          // Reality check
+          const realityCheck = await this.aiService.realityCheck(
+            this.convertToPropertyData(listing)
+          );
+          realityCheckResults.push(realityCheck);
+        }
+      }
+
+      // Calculate overall score
+      const overallScore = this.calculateOverallScore(
+        selectorQuality,
+        dataQualityResults,
+        realityCheckResults
+      );
+
+      console.log(`    ✅ AI Validation Score: ${overallScore}/100`);
+      if (selectorQuality.confidence < 70) {
+        console.log(`    ⚠️  Low selector confidence: ${selectorQuality.confidence}%`);
+      }
+
+      const failedChecks = realityCheckResults.filter(r => !r.passed);
+      if (failedChecks.length > 0) {
+        console.log(`    ⚠️  ${failedChecks.length} reality check(s) failed`);
+      }
+
+      return {
+        enabled: true,
+        selectorQuality,
+        dataQuality: dataQualityResults,
+        realityChecks: realityCheckResults,
+        overallScore
+      };
+    } catch (error) {
+      console.error(`    ❌ AI validation error:`, error);
+      return {
+        enabled: true,
+        selectorQuality: {
+          isValid: true,
+          confidence: 50,
+          issues: ['AI validation failed'],
+          suggestions: [],
+          reasoning: `Error: ${error}`
+        },
+        dataQuality: [],
+        realityChecks: [],
+        overallScore: 50
+      };
+    }
+  }
+
+  /**
+   * Convert listing data to PropertyData format
+   */
+  private convertToPropertyData(listing: any): PropertyData {
+    return {
+      title: listing.title,
+      price: this.extractNumber(listing.price),
+      area: this.extractNumber(listing.area),
+      city: listing.location || listing.city,
+      description: listing.description
+    };
+  }
+
+  /**
+   * Extract number from string
+   */
+  private extractNumber(value: any): number | undefined {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const match = value.match(/\d+/);
+      return match ? parseInt(match[0]) : undefined;
+    }
+    return undefined;
+  }
+
+  /**
+   * Calculate overall AI validation score
+   */
+  private calculateOverallScore(
+    selectorQuality: ValidationResult,
+    dataQuality: ValidationResult[],
+    realityChecks: RealityCheckResult[]
+  ): number {
+    let totalScore = 0;
+    let weights = 0;
+
+    // Selector quality: 40% weight
+    totalScore += selectorQuality.confidence * 0.4;
+    weights += 0.4;
+
+    // Data quality: 30% weight
+    if (dataQuality.length > 0) {
+      const avgDataQuality = dataQuality.reduce((sum, v) => sum + v.confidence, 0) / dataQuality.length;
+      totalScore += avgDataQuality * 0.3;
+      weights += 0.3;
+    }
+
+    // Reality checks: 30% weight
+    if (realityChecks.length > 0) {
+      const avgRealityScore = realityChecks.reduce((sum, r) => sum + r.score, 0) / realityChecks.length;
+      totalScore += avgRealityScore * 0.3;
+      weights += 0.3;
+    }
+
+    return Math.round(totalScore / weights);
   }
 
   /**

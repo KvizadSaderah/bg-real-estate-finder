@@ -47,10 +47,11 @@ program
   .option('-n, --name <name>', 'Agency name')
   .option('-s, --save', 'Save configuration automatically')
   .option('--city <city>', 'City to search for (default: sofia)', 'sofia')
+  .option('--ai', 'Enable AI validation (requires GEMINI_API_KEY or OPENAI_API_KEY)')
   .action(async (url: string, options: any) => {
     console.log(chalk.blue.bold('\n🔍 ANALYZING REAL ESTATE AGENCY\n'));
 
-    const analyzer = new AgencyAnalyzer();
+    const analyzer = new AgencyAnalyzer({ useAI: options.ai });
     try {
       const result = await analyzer.analyzeAgencySite(url, options.name || url, {
         searchForRentals: true,
@@ -98,8 +99,51 @@ program
         }
       }
 
+      // AI Validation Results
+      if (result.aiValidation) {
+        console.log(chalk.magenta('\n🤖 AI VALIDATION RESULTS\n'));
+        console.log(`Overall Score: ${chalk.cyan(result.aiValidation.overallScore + '/100')}`);
+
+        console.log(chalk.blue('\nSelector Quality:'));
+        console.log(`  Confidence: ${result.aiValidation.selectorQuality.confidence}%`);
+        console.log(`  Valid: ${result.aiValidation.selectorQuality.isValid ? '✓' : '✗'}`);
+        if (result.aiValidation.selectorQuality.issues.length > 0) {
+          console.log(chalk.yellow('  Issues:'));
+          result.aiValidation.selectorQuality.issues.forEach(issue => {
+            console.log(`    - ${issue}`);
+          });
+        }
+        if (result.aiValidation.selectorQuality.suggestions.length > 0) {
+          console.log(chalk.green('  Suggestions:'));
+          result.aiValidation.selectorQuality.suggestions.forEach(sug => {
+            console.log(`    - ${sug}`);
+          });
+        }
+
+        console.log(chalk.blue('\nReality Checks:'));
+        const passedChecks = result.aiValidation.realityChecks.filter(r => r.passed).length;
+        const totalChecks = result.aiValidation.realityChecks.length;
+        console.log(`  Passed: ${passedChecks}/${totalChecks}`);
+
+        result.aiValidation.realityChecks.forEach((check, i) => {
+          const status = check.passed ? chalk.green('✓') : chalk.red('✗');
+          console.log(`  ${status} Check ${i + 1}: ${check.score}/100`);
+          if (check.warnings.length > 0) {
+            check.warnings.forEach(warn => {
+              console.log(chalk.yellow(`     ⚠ ${warn}`));
+            });
+          }
+        });
+      }
+
       // Save configuration if requested
       if (options.save && result.success) {
+        // Check AI validation score before saving
+        if (result.aiValidation && result.aiValidation.overallScore < 60) {
+          console.log(chalk.yellow('\n⚠️  WARNING: Low AI validation score. Review configuration before using.'));
+          console.log(chalk.yellow('To save anyway, the configuration will be marked as experimental.'));
+        }
+
         const config = analyzer.analysisToConfig(result);
         await parserConfigManager.addSite(config);
         console.log(chalk.green(`\n✅ Configuration saved for ${result.siteName}`));
@@ -122,6 +166,7 @@ program
   .description('Analyze and setup all priority Sofia agencies')
   .option('--priority <number>', 'Only analyze sites up to this priority level', '6')
   .option('--delay <ms>', 'Delay between analyses in ms', '5000')
+  .option('--ai', 'Enable AI validation (requires GEMINI_API_KEY or OPENAI_API_KEY)')
   .action(async (options: any) => {
     console.log(chalk.blue.bold('\n🏢 SETTING UP ALL SOFIA AGENCIES\n'));
 
@@ -130,8 +175,11 @@ program
     const agenciesToSetup = SOFIA_AGENCIES.filter(a => a.priority <= maxPriority);
 
     console.log(`Setting up ${agenciesToSetup.length} agencies (priority 1-${maxPriority})\n`);
+    if (options.ai) {
+      console.log(chalk.magenta('🤖 AI validation enabled\n'));
+    }
 
-    const analyzer = new AgencyAnalyzer();
+    const analyzer = new AgencyAnalyzer({ useAI: options.ai });
     const results: any[] = [];
 
     for (const agency of agenciesToSetup) {
